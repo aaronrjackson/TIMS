@@ -8,6 +8,7 @@ function Form() {
     'IT Services',
     'Physical Assets',
     'Sensitive Data',
+    'Operational Continuity'
   ];
 
   const statusOptions = [
