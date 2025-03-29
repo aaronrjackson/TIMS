@@ -4,7 +4,8 @@ import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import './App.css';
 import Form from './Form';
 import ThreatDetail from './ThreatDetail';
-import ThreatEdit from './ThreatEdit'; 
+import ThreatEdit from './ThreatEdit';
+import ThreatCharts from './ThreatCharts';
 
 // homepage
 function Home() {
@@ -18,18 +19,18 @@ function Home() {
       try {
         setLoading(true);
         setError(null);
-        
+
         const url = activeTab === 'unresolved'
           ? 'http://localhost:3001/api/threats/unresolved'
           : activeTab === 'resolved'
-          ? 'http://localhost:3001/api/threats?status=Resolved'
-          : 'http://localhost:3001/api/threats';
-    
+            ? 'http://localhost:3001/api/threats?status=Resolved'
+            : 'http://localhost:3001/api/threats';
+
         console.log('Fetching from:', url);
         const response = await fetch(url);
-    
+
         console.log('Response status:', response.status);
-        
+
         if (!response.ok) {
           // Special handling for empty unresolved threats
           if (activeTab === 'unresolved' && response.status === 404) {
@@ -38,17 +39,17 @@ function Home() {
           }
           throw new Error(`HTTP ${response.status}`);
         }
-    
+
         const data = await response.json();
         console.log('Received data:', data); // Debug what we actually received
-        
+
         // Handle case where backend might return { error } instead of array
         if (data && data.error) {
           throw new Error(data.error);
         }
-    
+
         setThreats(Array.isArray(data) ? data : []);
-        
+
       } catch (err) {
         console.error('Fetch error:', err);
         setError(err.message);
@@ -186,8 +187,12 @@ function Home() {
 
             {activeTab === 'trends' && (
               <div className="tab-pane">
-                <h2>Threat Trends</h2>
-                <p>Analytics and patterns will appear here</p>
+                <h2>Threat Trends & Analysis</h2>
+                {threats.length === 0 ? (
+                  <p>No threat data available for analysis</p>
+                ) : (
+                  <ThreatCharts threats={threats} />
+                )}
               </div>
             )}
           </>

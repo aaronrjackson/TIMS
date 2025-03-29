@@ -48,6 +48,7 @@ function ThreatDetail() {
             const interval = setInterval(fetchMessages, 3000);
             return () => clearInterval(interval);
         }
+    // eslint-disable-next-line 
     }, [activeTab, id]);
 
     // Save username to localStorage when it changes

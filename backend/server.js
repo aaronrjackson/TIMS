@@ -253,20 +253,57 @@ app.get('/api/threats/:id', (req, res) => {
   );
 });
 
-app.get('/api/threats/summary', (req, res) => {
+// THREAT CHARTS ENDPOINT!!!
+app.get('/api/threats/stats', (req, res) => { // queries have to be stacking for some reason
+  // query db to get counts by threat level and sort by asc
   db.all(`
     SELECT 
-      json_each.value as category,
+      level,
       COUNT(*) as count
-    FROM threats, json_each(threats.categories)
-    GROUP BY json_each.value
-    ORDER BY count DESC
-  `, (err, rows) => {
+    FROM threats
+    GROUP BY level
+    ORDER BY level ASC
+  `, (err, levelCounts) => {
     if (err) {
       console.error('Database error:', err);
       return res.status(500).json({ error: err.message });
     }
-    res.json(rows || []);
+    
+    // get counts by category and sort by desc
+    db.all(`
+      SELECT 
+        json_each.value as category,
+        COUNT(*) as count
+      FROM threats, json_each(threats.categories)
+      GROUP BY json_each.value
+      ORDER BY count DESC
+    `, (err, categoryCounts) => {
+      if (err) {
+        console.error('Database error:', err);
+        return res.status(500).json({ error: err.message });
+      }
+      
+      // get monthly counts
+      db.all(`
+        SELECT 
+          strftime('%m/%Y', created_at) as month,
+          COUNT(*) as count
+        FROM threats
+        GROUP BY month
+        ORDER BY strftime('%Y', created_at), strftime('%m', created_at)
+      `, (err, monthlyCounts) => {
+        if (err) {
+          console.error('Database error:', err);
+          return res.status(500).json({ error: err.message });
+        }
+        
+        res.json({
+          levels: levelCounts,
+          categories: categoryCounts,
+          monthly: monthlyCounts
+        });
+      });
+    });
   });
 });
 
@@ -321,7 +358,6 @@ app.put('/api/threats/:id', (req, res) => {
     }
   );
 });
-// Add these endpoints to server.js
 
 // Get all messages for a specific threat
 app.get('/api/threats/:threatId/messages', (req, res) => {
