@@ -1,0 +1,52 @@
+.form-container {
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  
+  .form-group {
+    margin-bottom: 15px;
+  }
+  
+  label {
+    display: block;
+    margin-bottom: 5px;
+  }
+  
+  input, textarea {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+  }
+
+  .checkbox-group {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .checkbox-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .checkbox-option input[type="checkbox"] {
+    width: auto;
+    margin: 0;
+  }
+  
+  button {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  button:hover {
+    background-color: #45a049;
+  }
