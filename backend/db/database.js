@@ -1,39 +1,30 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
-// create a connection to the SQLite database
-const dbPath = path.resolve(__dirname, 'database.db');  // database file will be created here
-const db = new sqlite3.Database(dbPath, (err) => {
+// Create database connection
+const dbPath = path.resolve(__dirname, 'database.db');
+const db = new sqlite3.Database(dbPath);
+
+// Store the path for reference
+db.dbPath = dbPath; // Add custom property to store the path
+
+// Create tables and handle initialization
+db.serialize(() => {
+  db.run(`
+    CREATE TABLE IF NOT EXISTS threats (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      assessment INTEGER NOT NULL,
+      is_resolved INTEGER NOT NULL DEFAULT 0,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `, (err) => {
     if (err) {
-        console.error('Error opening database:', err.message);
+      console.error('Error creating table:', err);
     } else {
-        console.log('Connected to the SQLite database');
+      console.log('Database tables initialized');
     }
+  });
 });
 
-// create threats table
-const createTable = () => {
-    const createTableQuery = `
-    CREATE TABLE IF NOT EXISTS threats (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        assessment INTEGER NOT NULL,
-        is_resolved INTEGER NOT NULL, -- 0 represents not resolved, 1 represents resolved
-    )
-  `;
-    db.run(createTableQuery, (err) => {
-        if (err) {
-            console.error('Error creating \'threats\' table:', err.message);
-        } else {
-            console.log('\'threats\' table created or already exists');
-        }
-    });
-};
-
-// call createTable to ensure the table exists when the app starts
-createTable();
-
-// export the database connection so it can be used in other files (e.g., for queries)
-module.exports = {
-    db
-};
+module.exports = db;
