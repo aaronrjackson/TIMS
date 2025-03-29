@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import './ThreatEdit.css'; // Recommended to create this file for styling
+import './ThreatEdit.css';
 
 function ThreatEdit() {
   const { id } = useParams();
@@ -9,9 +9,10 @@ function ThreatEdit() {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    status: 'Potential', // Set default value
-    level: 1, // Set default value
-    categories: []
+    status: 'Potential',
+    level: 1,
+    categories: [],
+    resolution: ''
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -22,7 +23,7 @@ function ThreatEdit() {
       try {
         setLoading(true);
         const response = await fetch(`http://localhost:3001/api/threats/${id}`);
-        
+
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -34,7 +35,8 @@ function ThreatEdit() {
           description: data.description,
           status: data.status,
           level: data.level,
-          categories: data.categories || [] // Handle potential undefined
+          categories: data.categories || [],
+          resolution: data.resolution || ''
         });
       } catch (err) {
         console.error('Fetch error:', err);
@@ -48,7 +50,11 @@ function ThreatEdit() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData(prev => ({
+      ...prev,
+      [name]: value,
+      ...(name === 'status' && value !== 'Resolved' && { resolution: '' })
+    }));
   };
 
   const handleCategoryChange = (e) => {
@@ -64,8 +70,12 @@ function ThreatEdit() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      console.log("Submitting:", formData); // Debug log
-      
+      if (formData.status === 'Resolved' && !formData.resolution.trim()) {
+        throw new Error('Resolution details are required for resolved threats');
+      }
+
+      console.log("Submitting:", formData);
+
       const response = await fetch(`http://localhost:3001/api/threats/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -74,22 +84,23 @@ function ThreatEdit() {
           description: formData.description,
           status: formData.status,
           level: formData.level,
-          categories: formData.categories
+          categories: formData.categories,
+          resolution: formData.status === 'Resolved' ? formData.resolution : null
         })
       });
-  
-      console.log("Response status:", response.status); // Debug log
-      
+
+      console.log("Response status:", response.status);
+
       if (!response.ok) {
         const errorText = await response.text();
         console.error("Error response:", errorText);
         throw new Error(errorText || 'Update failed');
       }
-  
+
       const data = await response.json();
       console.log("Success:", data);
       navigate(`/threats/${id}`);
-      
+
     } catch (error) {
       console.error("Full error:", error);
       setError(error.message || 'Failed to update threat');
@@ -100,7 +111,6 @@ function ThreatEdit() {
   if (error) return <div className="error">Error: {error}</div>;
   if (!threat) return <div className="error">Threat not found</div>;
 
-  // Use the same categories as in your Form.js for consistency
   const allCategories = [
     'Personnel / Human Life',
     'Environment',
@@ -120,7 +130,6 @@ function ThreatEdit() {
   ];
 
   return (
-
     <div className="threat-edit-container">
       <div className="header">
         <button onClick={() => navigate(`/threats/${id}`)} className="back-button">
@@ -128,22 +137,21 @@ function ThreatEdit() {
         </button>
         <h1>Edit Threat: {threat.name}</h1>
       </div>
-      
+
       {error && (
-      <div className="error-message" style={{
-        color: 'red',
-        padding: '10px',
-        margin: '10px 0',
-        backgroundColor: '#ffeeee',
-        border: '1px solid red',
-        borderRadius: '4px'
-      }}>
-        Error: {error}
-      </div>
-    )}
+        <div className="error-message" style={{
+          color: 'red',
+          padding: '10px',
+          margin: '10px 0',
+          backgroundColor: '#ffeeee',
+          border: '1px solid red',
+          borderRadius: '4px'
+        }}>
+          Error: {error}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="edit-form">
-        {/* Name Field */}
         <div className="form-group">
           <label>Threat Name:</label>
           <input
@@ -155,7 +163,6 @@ function ThreatEdit() {
           />
         </div>
 
-        {/* Description Field */}
         <div className="form-group">
           <label>Description:</label>
           <textarea
@@ -167,7 +174,6 @@ function ThreatEdit() {
           />
         </div>
 
-        {/* Status Dropdown */}
         <div className="form-group">
           <label>Status:</label>
           <select
@@ -182,7 +188,21 @@ function ThreatEdit() {
           </select>
         </div>
 
-        {/* Threat Level Dropdown */}
+        {formData.status === 'Resolved' && (
+          <div className="form-group">
+            <label htmlFor="resolution">Resolution Details (required):</label>
+            <textarea
+              id="resolution"
+              name="resolution"
+              value={formData.resolution}
+              onChange={handleChange}
+              required
+              rows={4}
+              placeholder="Explain how this threat was resolved..."
+            />
+          </div>
+        )}
+
         <div className="form-group">
           <label>Threat Level:</label>
           <select
@@ -199,7 +219,6 @@ function ThreatEdit() {
           </select>
         </div>
 
-        {/* Categories Checkboxes */}
         <div className="form-group">
           <label>Categories:</label>
           <div className="categories-grid">
@@ -222,8 +241,8 @@ function ThreatEdit() {
           <button type="submit" className="save-button">
             Save Changes
           </button>
-          <button 
-            type="button" 
+          <button
+            type="button"
             onClick={() => navigate(`/threats/${id}`)}
             className="cancel-button"
           >
