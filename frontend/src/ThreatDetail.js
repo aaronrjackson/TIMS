@@ -113,7 +113,14 @@ function ThreatDetail() {
                             </div>
                         </div>
 
-                        {/* Edit Button - THIS IS THE CORRECT PLACEMENT */}
+                        {/* New Resolution Section */}
+                        {threat.status === 'Resolved' && threat.resolution && (
+                            <div className="section">
+                                <h3>Resolution Details</h3>
+                                <p className="resolution-text">{threat.resolution}</p>
+                            </div>
+                        )}
+
                         <div className="threat-actions">
                             <button
                                 onClick={() => navigate(`/threats/${id}/edit`)}

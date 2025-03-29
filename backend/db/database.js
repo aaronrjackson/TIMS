@@ -22,6 +22,7 @@ function createTables() {
         status TEXT NOT NULL CHECK(status IN ('Potential', 'Active', 'Resolved')),
         categories TEXT NOT NULL,
         level INTEGER NOT NULL CHECK(level >= 1 AND level <= 5),
+        resolution TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `, (err) => {

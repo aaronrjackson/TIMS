@@ -28,7 +28,8 @@ function Form() {
     threatname: '',
     description: '',
     status: 'Potential',
-    categories: []
+    categories: [],
+    resolution: ''
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -40,7 +41,12 @@ function Form() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData(prev => ({
+      ...prev,
+      [name]: value,
+      // Clear resolution if status changes from Resolved
+      ...(name === 'status' && value !== 'Resolved' && { resolution: '' })
+    }));
   };
 
   const handleCategoryChange = (e) => {
@@ -55,6 +61,13 @@ function Form() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Add this validation check
+    if (formData.status === 'Resolved' && !formData.resolution.trim()) {
+      setError('Please provide resolution details for resolved threats');
+      return;
+    }
+
     setIsSubmitting(true);
     setError(null);
 
@@ -94,11 +107,25 @@ function Form() {
     }
   };
 
-  const handleConfirmThreatLevel = async () => { // Renamed from handleConfirmTriage
+  const handleConfirmThreatLevel = async () => {
     setIsSubmitting(true);
     setError(null);
-
+  
     try {
+      console.log("Form data being submitted:", {
+        name: formData.threatname,
+        description: formData.description,
+        status: formData.status,
+        categories: formData.categories,
+        threatLevel: selectedThreatLevel,
+        resolution: formData.resolution
+      });
+  
+      // Validate resolution for resolved threats
+      if (formData.status === 'Resolved' && !formData.resolution.trim()) {
+        throw new Error('Resolution details are required for resolved threats');
+      }
+  
       const response = await fetch('http://localhost:3001/api/threats', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -108,32 +135,56 @@ function Form() {
           status: formData.status,
           categories: formData.categories,
           threatLevel: selectedThreatLevel,
-          aiRecommendation: aiRecommendation.threatLevel,
-          aiExplanation: aiRecommendation.explanation
+          resolution: formData.status === 'Resolved' ? formData.resolution : null,
+          aiRecommendation: aiRecommendation?.threatLevel,
+          aiExplanation: aiRecommendation?.explanation
         }),
       });
-
+  
+      console.log("Response status:", response.status);
+      console.log("Response headers:", [...response.headers.entries()]);
+  
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Final submission failed');
+        const errorText = await response.text();
+        console.error("Server responded with error:", errorText);
+        throw new Error(errorText || 'Final submission failed');
       }
-
+  
       const result = await response.json();
+      console.log("Full server response:", result);
+  
       alert(`Threat submitted successfully! ID: ${result.id}`);
-
+  
       // Reset form
       setFormData({
         threatname: '',
         description: '',
         status: 'Potential',
-        categories: []
+        categories: [],
+        resolution: ''
       });
       setAiRecommendation(null);
       setSelectedThreatLevel(null);
       setShowThreatLevelModal(false);
-
+  
+      // Force complete refresh - choose ONE of these options:
+      
+      // Option 1: Full page reload (most reliable)
+      window.location.reload();
+  
+      // Option 2: Navigate away and back (smoother but more complex)
+      // navigate('/');
+      // setTimeout(() => navigate('/threats'), 50);
+      
+      // Option 3: If you have access to setRefreshThreats function:
+      // setRefreshThreats(prev => !prev);
+  
     } catch (err) {
-      console.error('Final submission error:', err);
+      console.error('Complete error details:', {
+        message: err.message,
+        stack: err.stack,
+        name: err.name
+      });
       setError(err.message);
     } finally {
       setIsSubmitting(false);
@@ -191,6 +242,21 @@ function Form() {
           </select>
         </div>
 
+        {formData.status === 'Resolved' && (
+          <div className="form-group">
+            <label htmlFor="resolution">Resolution Details (required):</label>
+            <textarea
+              id="resolution"
+              name="resolution"
+              value={formData.resolution}
+              onChange={handleChange}
+              required
+              rows={4}
+              placeholder="Explain how this threat was resolved..."
+            />
+          </div>
+        )}
+
         <div className="form-group">
           <label>Categories (what is this a threat to?):</label>
           <div className="checkbox-group">
@@ -226,6 +292,19 @@ function Form() {
               <p><strong>Reasoning:</strong> {aiRecommendation.explanation}</p>
             </div>
 
+            {error && (
+              <div className="error-message" style={{
+                color: 'red',
+                padding: '10px',
+                margin: '10px 0',
+                backgroundColor: '#ffeeee',
+                border: '1px solid red',
+                borderRadius: '4px'
+              }}>
+                {error}
+              </div>
+            )}
+
             <div className="threat-level-selection"> {/* Updated class name */}
               <h3>Select Threat Level:</h3>
               <p><i>You can choose to follow the AI's recommendation, or submit your own.</i></p>
@@ -254,8 +333,17 @@ function Form() {
                 Cancel
               </button>
               <button
-                onClick={handleConfirmThreatLevel} // Updated function name
+                onClick={handleConfirmThreatLevel}
                 disabled={isSubmitting}
+                style={{
+                  backgroundColor: isSubmitting ? '#ccc' : '#4CAF50',
+                  color: 'white',
+                  padding: '10px 20px',
+                  border: '2px solid red', // Only keep this one
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '16px'
+                }}
               >
                 {isSubmitting ? 'Submitting...' : 'Confirm Threat Level'}
               </button>

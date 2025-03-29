@@ -15,36 +15,42 @@ function Home() {
     const fetchThreats = async () => {
       try {
         setLoading(true);
-        let status = null;
-
-        if (activeTab === 'unresolved') {
-          status = 'Active';
-        } else if (activeTab === 'resolved') {
-          status = 'Resolved';
-        }
-
-        const url = status
-          ? `http://localhost:3001/api/threats?status=${status}`
+        setError(null);
+        
+        const url = activeTab === 'unresolved'
+          ? 'http://localhost:3001/api/threats/unresolved'
+          : activeTab === 'resolved'
+          ? 'http://localhost:3001/api/threats?status=Resolved'
           : 'http://localhost:3001/api/threats';
-
-        console.log('Fetching from:', url); // Add this line
-
+    
+        console.log('Fetching from:', url);
         const response = await fetch(url);
-
-        console.log('Response status:', response.status); // Add this line
-
+    
+        console.log('Response status:', response.status);
+        
         if (!response.ok) {
-          const errorText = await response.text();
-          console.log('Error response:', errorText); // Add this line
-          throw new Error(`Failed to fetch threats: ${response.status} ${errorText}`);
+          // Special handling for empty unresolved threats
+          if (activeTab === 'unresolved' && response.status === 404) {
+            setThreats([]);
+            return;
+          }
+          throw new Error(`HTTP ${response.status}`);
         }
-
+    
         const data = await response.json();
-        console.log('Received data:', data); // Add this line
-        setThreats(data);
+        console.log('Received data:', data); // Debug what we actually received
+        
+        // Handle case where backend might return { error } instead of array
+        if (data && data.error) {
+          throw new Error(data.error);
+        }
+    
+        setThreats(Array.isArray(data) ? data : []);
+        
       } catch (err) {
-        console.error('Fetch error:', err); // Enhanced error logging
+        console.error('Fetch error:', err);
         setError(err.message);
+        setThreats([]);
       } finally {
         setLoading(false);
       }
@@ -114,7 +120,6 @@ function Home() {
                         className="threat-card-link"
                       >
                         <div className="threat-card">
-                          {/* Keep all existing card content exactly as-is */}
                           <div className="threat-header">
                             <h3>{threat.name}</h3>
                             <span className={`threat-level level-${threat.level}`}>
@@ -153,7 +158,6 @@ function Home() {
                         className="threat-card-link"
                       >
                         <div className="threat-card">
-                          {/* Keep all existing card content exactly as-is */}
                           <div className="threat-header">
                             <h3>{threat.name}</h3>
                             <span className={`threat-level level-${threat.level}`}>
@@ -195,7 +199,6 @@ function Home() {
   );
 }
 
-// all our different pages
 function App() {
   return (
     <Router>
