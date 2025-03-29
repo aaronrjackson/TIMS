@@ -110,7 +110,7 @@ function Form() {
   const handleConfirmThreatLevel = async () => {
     setIsSubmitting(true);
     setError(null);
-  
+
     try {
       console.log("Form data being submitted:", {
         name: formData.threatname,
@@ -120,12 +120,12 @@ function Form() {
         threatLevel: selectedThreatLevel,
         resolution: formData.resolution
       });
-  
+
       // Validate resolution for resolved threats
       if (formData.status === 'Resolved' && !formData.resolution.trim()) {
         throw new Error('Resolution details are required for resolved threats');
       }
-  
+
       const response = await fetch('http://localhost:3001/api/threats', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -140,21 +140,21 @@ function Form() {
           aiExplanation: aiRecommendation?.explanation
         }),
       });
-  
+
       console.log("Response status:", response.status);
       console.log("Response headers:", [...response.headers.entries()]);
-  
+
       if (!response.ok) {
         const errorText = await response.text();
         console.error("Server responded with error:", errorText);
         throw new Error(errorText || 'Final submission failed');
       }
-  
+
       const result = await response.json();
       console.log("Full server response:", result);
-  
+
       alert(`Threat submitted successfully! ID: ${result.id}`);
-  
+
       // Reset form
       setFormData({
         threatname: '',
@@ -166,19 +166,19 @@ function Form() {
       setAiRecommendation(null);
       setSelectedThreatLevel(null);
       setShowThreatLevelModal(false);
-  
+
       // Force complete refresh - choose ONE of these options:
-      
+
       // Option 1: Full page reload (most reliable)
       window.location.reload();
-  
+
       // Option 2: Navigate away and back (smoother but more complex)
       // navigate('/');
       // setTimeout(() => navigate('/threats'), 50);
-      
+
       // Option 3: If you have access to setRefreshThreats function:
       // setRefreshThreats(prev => !prev);
-  
+
     } catch (err) {
       console.error('Complete error details:', {
         message: err.message,

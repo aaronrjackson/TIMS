@@ -13,8 +13,8 @@ const db = new sqlite3.Database(dbPath, (err) => {
 });
 
 function createTables() {
-    db.run("DROP TABLE IF EXISTS threats");
-    db.run(`
+  db.run("DROP TABLE IF EXISTS threats");
+  db.run(`
       CREATE TABLE IF NOT EXISTS threats (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
@@ -26,12 +26,12 @@ function createTables() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `, (err) => {
-      if (err) {
-        console.error('Error creating threats table:', err.message);
-      } else {
-        console.log('Successfully created threats table with correct schema');
-      }
-    });
-  }
+    if (err) {
+      console.error('Error creating threats table:', err.message);
+    } else {
+      console.log('Successfully created threats table with correct schema');
+    }
+  });
+}
 
 module.exports = db;

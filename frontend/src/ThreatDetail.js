@@ -58,7 +58,7 @@ function ThreatDetail() {
                 <h1>Threat: {threat.name}</h1>
             </div>
 
-            {/* Tab Navigation - REMOVE BUTTON FROM HERE */}
+            {/* Tab Navigation*/}
             <div className="detail-tabs">
                 <button
                     className={`tab ${activeTab === 'details' ? 'active' : ''}`}

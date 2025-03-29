@@ -94,7 +94,7 @@ function Home() {
           className={`tab ${activeTab === 'trends' ? 'active' : ''}`}
           onClick={() => setActiveTab('trends')}
         >
-          Trends Analysis
+          Trends & Analysis
         </button>
       </div>
 

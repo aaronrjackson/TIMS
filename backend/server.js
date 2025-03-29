@@ -27,12 +27,7 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Routes
-app.get("/", (req, res) => {
-  res.send("Hello, Backend!");
-});
-
-// New endpoint for AI processing
+// AI PROCESSING THREAT LEVEL ENDPOINT!!!
 app.post('/api/analyze-threat-level', async (req, res) => {
   const { name, description, status, categories } = req.body;
 
@@ -88,11 +83,11 @@ app.post('/api/analyze-threat-level', async (req, res) => {
     const response = chatCompletion.choices[0]?.message?.content;
     console.log('Raw AI response:', response); // For debugging
 
-    // Parse the response
+    // Parse response
     const [threatLevel, ...explanationParts] = response.split(' ');
     const explanation = explanationParts.join(' ').trim();
 
-    // Validate the response
+    // Validate response
     const levelNum = parseInt(threatLevel);
     if (isNaN(levelNum) || levelNum < 1 || levelNum > 5) {
       throw new Error('Invalid threat level received from AI');
@@ -110,14 +105,14 @@ app.post('/api/analyze-threat-level', async (req, res) => {
   }
 });
 
-// Updated threat submission endpoint
+// THREAT SUBMISSION ENDPOINT!!!
 app.post('/api/threats', async (req, res) => {
   const { name, description, status, categories, threatLevel, resolution } = req.body; // Add resolution
 
   // Validation
   if (!name?.trim() || !description?.trim() || !status || !categories?.length || !threatLevel) {
-    return res.status(400).json({ 
-      error: 'All required fields are missing or empty' 
+    return res.status(400).json({
+      error: 'All required fields are missing or empty'
     });
   }
 
@@ -138,12 +133,12 @@ app.post('/api/threats', async (req, res) => {
       threatLevel,
       status === 'Resolved' ? resolution : null
     ],
-    function(err) {
+    function (err) {
       if (err) {
         console.error('Database error:', err);
-        return res.status(500).json({ 
+        return res.status(500).json({
           error: 'Failed to save threat to database',
-          details: err.message 
+          details: err.message
         });
       }
 
@@ -162,6 +157,7 @@ app.post('/api/threats', async (req, res) => {
   );
 });
 
+// 
 app.get('/api/threats/unresolved', (req, res) => {
   console.log('Fetching unresolved threats...'); // Debug log
   db.all(
@@ -177,7 +173,7 @@ app.get('/api/threats/unresolved', (req, res) => {
       }
 
       console.log(`Found ${rows ? rows.length : 0} unresolved threats`); // Debug log
-      
+
       // Always return an array, even if empty
       const result = {
         threats: rows ? rows.map(row => ({
@@ -185,7 +181,7 @@ app.get('/api/threats/unresolved', (req, res) => {
           categories: JSON.parse(row.categories || '[]')
         })) : []
       };
-      
+
       res.json(result.threats.length ? result.threats : []); // Ensure empty array if no threats
     }
   );
@@ -257,6 +253,23 @@ app.get('/api/threats/:id', (req, res) => {
   );
 });
 
+app.get('/api/threats/summary', (req, res) => {
+  db.all(`
+    SELECT 
+      json_each.value as category,
+      COUNT(*) as count
+    FROM threats, json_each(threats.categories)
+    GROUP BY json_each.value
+    ORDER BY count DESC
+  `, (err, rows) => {
+    if (err) {
+      console.error('Database error:', err);
+      return res.status(500).json({ error: err.message });
+    }
+    res.json(rows || []);
+  });
+});
+
 app.put('/api/threats/:id', (req, res) => {
   const { id } = req.params;
   const { name, description, status, level, categories, resolution } = req.body; // Add resolution here
@@ -266,9 +279,9 @@ app.put('/api/threats/:id', (req, res) => {
 
   // Validate required fields
   if (!name || !description || !status || level === undefined || !categories) {
-    return res.status(400).json({ 
+    return res.status(400).json({
       error: 'Missing required fields',
-      received: req.body 
+      received: req.body
     });
   }
 
@@ -290,17 +303,17 @@ app.put('/api/threats/:id', (req, res) => {
       status === 'Resolved' ? resolution : null, // Properly handle resolution
       id
     ],
-    function(err) {
+    function (err) {
       if (err) {
         console.error("Database error:", err);
-        return res.status(500).json({ 
+        return res.status(500).json({
           error: 'Failed to update threat',
-          details: err.message 
+          details: err.message
         });
       }
-      
+
       console.log(`Updated ${this.changes} rows`);
-      res.json({ 
+      res.json({
         success: true,
         id: id,
         changes: this.changes
