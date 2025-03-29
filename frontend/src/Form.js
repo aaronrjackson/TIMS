@@ -10,82 +10,81 @@ function Form() {
     'Sensitive Data',
   ];
 
-  const statusOptions = [
-    'Potential',
-    'Active',
-    'Resolved'
-  ];
+  const statusOptions = ['Potential', 'Active', 'Resolved'];
 
   const [formData, setFormData] = useState({
     threatname: '',
     description: '',
-    status: 'Potential', // Added status to initial state
-    categories: [] // For checkbox selections
+    status: 'Potential',
+    categories: []
   });
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState(null);
 
-  // Handle text/select inputs
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  // Handle checkbox changes
   const handleCategoryChange = (e) => {
     const { value, checked } = e.target;
-    
-    setFormData(prev => {
-      if (checked) {
-        return {
-          ...prev,
-          categories: [...prev.categories, value]
-        };
-      } else {
-        return {
-          ...prev,
-          categories: prev.categories.filter(cat => cat !== value)
-        };
-      }
-    });
+    setFormData(prev => ({
+      ...prev,
+      categories: checked
+        ? [...prev.categories, value]
+        : prev.categories.filter(cat => cat !== value)
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
+    setError(null);
+
     try {
-      const response = await fetch('http://localhost:5000/api/submit', {
+      const response = await fetch('http://localhost:3001/api/threats', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.threatname,
+          description: formData.description,
+          status: formData.status,
+          categories: formData.categories
+        }),
       });
-      
-      if (response.ok) {
-        alert('Form submitted successfully!');
-        setFormData({ 
-          threatname: '', 
-          description: '', 
-          status: 'Potential',
-          categories: []
-        });
-      } else {
-        throw new Error('Submission failed');
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Submission failed');
       }
-    } catch (error) {
-      console.error('Error:', error);
-      alert('Error submitting form');
+
+      const result = await response.json();
+      alert(`Threat submitted successfully! ID: ${result.id}`);
+      
+      // Reset form
+      setFormData({
+        threatname: '',
+        description: '',
+        status: 'Potential',
+        categories: []
+      });
+
+    } catch (err) {
+      console.error('Submission error:', err);
+      setError(err.message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
     <div className="form-container">
       <h1>Threat Submission Form</h1>
+      {error && <div className="error-message">{error}</div>}
+      
       <form onSubmit={handleSubmit}>
-
-        <div className="form-group">
+      <div className="form-group">
           <label htmlFor="threatname">Threat name:</label>
           <input
             type="text"
@@ -142,8 +141,10 @@ function Form() {
             ))}
           </div>
         </div>
-        
-        <button type="submit">Submit</button>
+
+        <button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? 'Submitting...' : 'Submit'}
+        </button>
       </form>
     </div>
   );
