@@ -308,6 +308,64 @@ app.put('/api/threats/:id', (req, res) => {
     }
   );
 });
+// Add these endpoints to server.js
+
+// Get all messages for a specific threat
+app.get('/api/threats/:threatId/messages', (req, res) => {
+    const { threatId } = req.params;
+    
+    db.all(
+      'SELECT * FROM threat_messages WHERE threat_id = ? ORDER BY created_at ASC',
+      [threatId],
+      (err, rows) => {
+        if (err) {
+          console.error('Database error:', err);
+          return res.status(500).json({
+            error: 'Failed to fetch messages',
+            details: err.message
+          });
+        }
+        
+        res.json(rows);
+      }
+    );
+  });
+  
+  // Post a new message for a specific threat
+  app.post('/api/threats/:threatId/messages', (req, res) => {
+    const { threatId } = req.params;
+    const { sender, message } = req.body;
+    
+    // Validation
+    if (!sender?.trim() || !message?.trim()) {
+      return res.status(400).json({
+        error: 'Sender and message are required'
+      });
+    }
+    
+    db.run(
+      'INSERT INTO threat_messages (threat_id, sender, message) VALUES (?, ?, ?)',
+      [threatId, sender, message],
+      function(err) {
+        if (err) {
+          console.error('Database error:', err);
+          return res.status(500).json({
+            error: 'Failed to save message',
+            details: err.message
+          });
+        }
+        
+        // Return the created message with its ID
+        res.status(201).json({
+          id: this.lastID,
+          threat_id: threatId,
+          sender,
+          message,
+          created_at: new Date().toISOString()
+        });
+      }
+    );
+  });
 
 app.listen(PORT, () => {
   console.log(`Server is now running on http://localhost:${PORT}`);

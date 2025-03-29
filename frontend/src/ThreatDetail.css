@@ -181,3 +181,99 @@
     transform: translateY(-1px);
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   }
+
+  /* Add this to your ThreatDetail.css file */
+
+.communications-container {
+  margin-top: 1rem;
+}
+
+.message-list {
+  height: 300px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  margin-bottom: 1rem;
+}
+
+.message-item {
+  margin-bottom: 12px;
+  padding: 10px;
+  border-radius: 8px;
+  max-width: 85%;
+  position: relative;
+}
+
+.message-user {
+  background-color: #e7f5ff;
+  margin-left: auto;
+}
+
+.message-other {
+  background-color: #f1f1f1;
+}
+
+.message-sender {
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.message-content {
+  word-break: break-word;
+}
+
+.message-time {
+  font-size: 0.7rem;
+  color: #999;
+  position: absolute;
+  bottom: 2px;
+  right: 8px;
+}
+
+.message-form {
+  display: flex;
+  gap: 10px;
+}
+
+.message-input {
+  flex-grow: 1;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.send-button {
+  padding: 10px 15px;
+  background-color: #2196F3;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.send-button:hover {
+  background-color: #0b7dda;
+}
+
+.user-info {
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-input {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  width: 200px;
+}
+
+.empty-messages {
+  padding: 2rem;
+  text-align: center;
+  color: #999;
+  font-style: italic;
+}
