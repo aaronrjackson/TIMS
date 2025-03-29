@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import './ThreatDetail.css';
 
@@ -9,6 +9,12 @@ function ThreatDetail() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [activeTab, setActiveTab] = useState('details');
+    
+    // Communications tab state
+    const [messages, setMessages] = useState([]);
+    const [newMessage, setNewMessage] = useState('');
+    const [username, setUsername] = useState(localStorage.getItem('chatUsername') || '');
+    const messagesEndRef = useRef(null);
 
     useEffect(() => {
         const fetchThreat = async () => {
@@ -33,6 +39,82 @@ function ThreatDetail() {
 
         fetchThreat();
     }, [id]);
+
+    // Fetch messages when the communications tab is active
+    useEffect(() => {
+        if (activeTab === 'communications') {
+            fetchMessages();
+            // Set up polling for new messages every 3 seconds
+            const interval = setInterval(fetchMessages, 3000);
+            return () => clearInterval(interval);
+        }
+    }, [activeTab, id]);
+
+    // Save username to localStorage when it changes
+    useEffect(() => {
+        if (username) {
+            localStorage.setItem('chatUsername', username);
+        }
+    }, [username]);
+
+    // Scroll to bottom when new messages arrive
+    useEffect(() => {
+        if (activeTab === 'communications') {
+            scrollToBottom();
+        }
+    }, [messages, activeTab]);
+
+    const fetchMessages = async () => {
+        try {
+            const response = await fetch(`http://localhost:3001/api/threats/${id}/messages`);
+            if (!response.ok) {
+                throw new Error(`Failed to fetch messages: ${response.status}`);
+            }
+            const data = await response.json();
+            setMessages(data);
+        } catch (err) {
+            console.error('Error fetching messages:', err);
+        }
+    };
+
+    const handleSendMessage = async (e) => {
+        e.preventDefault();
+        
+        if (!newMessage.trim() || !username.trim()) return;
+        
+        try {
+            const response = await fetch(`http://localhost:3001/api/threats/${id}/messages`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    sender: username,
+                    message: newMessage
+                }),
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Failed to send message: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            setMessages([...messages, data]);
+            setNewMessage('');
+            scrollToBottom();
+        } catch (err) {
+            console.error('Error sending message:', err);
+        }
+    };
+
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    };
+
+    const formatTime = (timestamp) => {
+        const date = new Date(timestamp);
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    };
 
     const getThreatLevelLabel = (level) => {
         const levels = {
@@ -80,7 +162,6 @@ function ThreatDetail() {
                 </button>
             </div>
 
-            {/* Tab Content */}
             <div className="tab-content">
                 {activeTab === 'details' && (
                     <div className="tab-pane">
@@ -113,27 +194,10 @@ function ThreatDetail() {
                             </div>
                         </div>
 
-                        {/* New Resolution Section */}
-                        {threat.status === 'Resolved' && threat.resolution && (
-                            <div className="section">
-                                <h3>Resolution Details</h3>
-                                <p className="resolution-text">{threat.resolution}</p>
-                            </div>
-                        )}
-
                         <div className="threat-actions">
                             <button
                                 onClick={() => navigate(`/threats/${id}/edit`)}
                                 className="edit-button"
-                                style={{
-                                    backgroundColor: '#2196F3',
-                                    color: 'white',
-                                    padding: '10px 15px',
-                                    border: 'none',
-                                    borderRadius: '4px',
-                                    cursor: 'pointer',
-                                    marginTop: '20px'
-                                }}
                             >
                                 Edit Threat
                             </button>
@@ -142,9 +206,74 @@ function ThreatDetail() {
                 )}
 
                 {activeTab === 'communications' && (
-                    <div className="tab-pane">
-                        <h3>Communications</h3>
-                        <p>All related communications will appear here.</p>
+                    <div className="communications-container">
+                        <h3>Communications for this Threat</h3>
+                        
+                        {!username ? (
+                            <div className="user-info">
+                                <input
+                                    type="text"
+                                    placeholder="Enter your name"
+                                    className="user-input"
+                                    value={username}
+                                    onChange={(e) => setUsername(e.target.value)}
+                                />
+                                <button 
+                                    onClick={() => setUsername(username)}
+                                    className="send-button"
+                                >
+                                    Set Name
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="user-info">
+                                <span>Communicating as: <strong>{username}</strong></span>
+                                <button 
+                                    onClick={() => setUsername('')}
+                                    className="edit-button"
+                                >
+                                    Change
+                                </button>
+                            </div>
+                        )}
+                        
+                        <div className="message-list">
+                            {messages.length === 0 ? (
+                                <div className="empty-messages">No communications yet. Start the conversation!</div>
+                            ) : (
+                                messages.map((msg) => (
+                                    <div 
+                                        key={msg.id} 
+                                        className={`message-item ${msg.sender === username ? 'message-user' : 'message-other'}`}
+                                    >
+                                        <div className="message-sender">{msg.sender}</div>
+                                        <div className="message-content">{msg.message}</div>
+                                        <div className="message-time">{formatTime(msg.created_at)}</div>
+                                    </div>
+                                ))
+                            )}
+                            <div ref={messagesEndRef} />
+                        </div>
+                        
+                        {username && (
+                            <form onSubmit={handleSendMessage} className="message-form">
+                                <input
+                                    type="text"
+                                    placeholder="Type your message..."
+                                    className="message-input"
+                                    value={newMessage}
+                                    onChange={(e) => setNewMessage(e.target.value)}
+                                    disabled={!username}
+                                />
+                                <button 
+                                    type="submit" 
+                                    className="send-button"
+                                    disabled={!username || !newMessage.trim()}
+                                >
+                                    Send
+                                </button>
+                            </form>
+                        )}
                     </div>
                 )}
 

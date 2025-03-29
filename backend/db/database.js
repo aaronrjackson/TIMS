@@ -26,12 +26,28 @@ function createTables() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `, (err) => {
-    if (err) {
-      console.error('Error creating threats table:', err.message);
-    } else {
-      console.log('Successfully created threats table with correct schema');
-    }
-  });
-}
+      if (err) {
+        console.error('Error creating threats table:', err.message);
+      } else {
+        console.log('Successfully created threats table with correct schema');
+      }
+    });
+    db.run(`
+      CREATE TABLE IF NOT EXISTS threat_messages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        threat_id INTEGER NOT NULL,
+        sender TEXT NOT NULL,
+        message TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (threat_id) REFERENCES threats (id)
+      )
+    `, (err) => {
+      if (err) {
+        console.error('Error creating threat_messages table:', err.message);
+      } else {
+        console.log('Successfully created threat_messages table');
+      }
+    });
+  }
 
 module.exports = db;
