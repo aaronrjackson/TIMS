@@ -19,12 +19,50 @@ const groq = new Groq({
 
 // Middleware
 const cors = require('cors');
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:3000', // Your React app's origin
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type']
+}));
 app.use(express.json());
 
 // Routes
 app.get("/", (req, res) => {
   res.send("Hello, Backend!");
+});
+
+// Get single threat by ID
+app.get('/api/threats/:id', (req, res) => {
+  const { id } = req.params;
+  
+  db.get(
+    'SELECT * FROM threats WHERE id = ?',
+    [id],
+    (err, row) => {
+      if (err) {
+        console.error('Database error:', err);
+        return res.status(500).json({ 
+          error: 'Failed to fetch threat',
+          details: err.message 
+        });
+      }
+      
+      if (!row) {
+        return res.status(404).json({ 
+          error: 'Threat not found' 
+        });
+      }
+      
+      // Parse categories from JSON string
+      const threat = {
+        ...row,
+        categories: JSON.parse(row.categories)
+        // Removed aiRecommendation and aiExplanation
+      };
+      
+      res.json(threat);
+    }
+  );
 });
 
 // New endpoint for AI processing
@@ -119,23 +157,16 @@ app.post('/api/threats', async (req, res) => {
     });
   }
 
-  console.log("ok1");
-
   if (!['Potential', 'Active', 'Resolved'].includes(status)) {
     return res.status(400).json({ 
       error: 'Invalid status value' 
     });
   }
-
-  console.log("ok2");
-
   if (threatLevel < 1 || threatLevel > 5) {
     return res.status(400).json({ 
       error: 'Threat level must be between 1 and 5' 
     });
   }
-
-  console.log("ok3");
 
   db.run(
     `INSERT INTO threats (name, description, status, categories, level)
@@ -168,7 +199,38 @@ app.post('/api/threats', async (req, res) => {
       });
     }
   );
-  console.log("ok4");
+});
+
+app.get('/api/threats', (req, res) => {
+  const { status } = req.query;
+  
+  let query = 'SELECT * FROM threats';
+  const params = [];
+  
+  if (status) {
+    query += ' WHERE status = ?';
+    params.push(status);
+  }
+  
+  query += ' ORDER BY created_at DESC';
+  
+  db.all(query, params, (err, rows) => {
+    if (err) {
+      console.error('Database error:', err);
+      return res.status(500).json({ 
+        error: 'Failed to fetch threats',
+        details: err.message 
+      });
+    }
+    
+    // Parse categories from JSON string
+    const threats = rows.map(row => ({
+      ...row,
+      categories: JSON.parse(row.categories)
+    }));
+    
+    res.json(threats);
+  });
 });
 
 app.listen(PORT, () => {
