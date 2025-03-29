@@ -14,11 +14,11 @@ function Form() {
 
   const statusOptions = ['Potential', 'Active', 'Resolved'];
   const triageLevels = [
-    { level: 1, label: '1 - Critical (Immediate action required)' },
-    { level: 2, label: '2 - High (Address within 24 hours)' },
+    { level: 5, label: '5 - Critical (Immediate action required)' },
+    { level: 4, label: '4 - High (Address within 24 hours)' },
     { level: 3, label: '3 - Medium (Address within week)' },
-    { level: 4, label: '4 - Low (Address when possible)' },
-    { level: 5, label: '5 - Informational (No immediate action)' }
+    { level: 2, label: '2 - Low (Address when possible)' },
+    { level: 1, label: '1 - Informational (No immediate action)' }
   ];
 
   const [formData, setFormData] = useState({
@@ -72,8 +72,14 @@ function Form() {
       }
 
       const result = await response.json();
-      setTriageResult(result);
-      setSelectedTriage(result.triageLevel); // Default to AI's recommendation
+      const [triageLevel, ...explanationParts] = result.analysis.split(' ');
+      const explanation = explanationParts.join(' ').trim();
+
+      setTriageResult({
+        triageLevel: parseInt(triageLevel),
+        explanation
+      });
+      setSelectedTriage(parseInt(triageLevel));
       setShowTriageModal(true);
 
     } catch (err) {
@@ -129,6 +135,8 @@ function Form() {
       setIsSubmitting(false);
     }
   };
+
+  
 
   return (
     <div className="form-container">
@@ -203,15 +211,16 @@ function Form() {
       {showTriageModal && (
         <div className="modal-overlay">
           <div className="triage-modal">
-            <h2>Triage Level Recommendation</h2>
+            <h2>Threat Level</h2>
             
             <div className="ai-recommendation">
-              <h3>AI Recommendation:</h3>
-              <p><strong>Level {triageResult.triageLevel}</strong> - {triageResult.explanation}</p>
+              <p><strong>AI Recommended Threat Level:</strong> {triageResult.triageLevel}</p>
+              <p><strong>Reasoning:</strong> {triageResult.explanation}</p>
             </div>
 
             <div className="triage-selection">
-              <h3>Select Triage Level:</h3>
+              <h3>Select Threat Level:</h3>
+              <p> <i>You can choose to follow the AI's recommendation, or submit your own.</i></p>
               <div className="triage-options">
                 {triageLevels.map(({ level, label }) => (
                   <div key={level} className="triage-option">
@@ -234,7 +243,7 @@ function Form() {
                 onClick={() => setShowTriageModal(false)}
                 className="secondary"
               >
-                Cancel (Edit Threat)
+                Cancel
               </button>
               <button 
                 onClick={handleConfirmTriage}
@@ -245,6 +254,7 @@ function Form() {
             </div>
           </div>
         </div>
+        
       )}
     </div>
   );
