@@ -84,7 +84,7 @@ app.post('/api/analyze-threat-level', async (req, res) => {
     console.log('Raw AI response:', response); // For debugging
 
     // Parse the response
-    const [threateLevel, ...explanationParts] = response.split(' ');
+    const [threatLevel, ...explanationParts] = response.split(' ');
     const explanation = explanationParts.join(' ').trim();
 
     // Validate the response
