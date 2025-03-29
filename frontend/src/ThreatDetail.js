@@ -9,7 +9,7 @@ function ThreatDetail() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [activeTab, setActiveTab] = useState('details');
-    
+
     // Communications tab state
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
@@ -79,9 +79,9 @@ function ThreatDetail() {
 
     const handleSendMessage = async (e) => {
         e.preventDefault();
-        
+
         if (!newMessage.trim() || !username.trim()) return;
-        
+
         try {
             const response = await fetch(`http://localhost:3001/api/threats/${id}/messages`, {
                 method: 'POST',
@@ -93,11 +93,11 @@ function ThreatDetail() {
                     message: newMessage
                 }),
             });
-            
+
             if (!response.ok) {
                 throw new Error(`Failed to send message: ${response.status}`);
             }
-            
+
             const data = await response.json();
             setMessages([...messages, data]);
             setNewMessage('');
@@ -185,6 +185,20 @@ function ThreatDetail() {
                             <p>{threat.description}</p>
                         </div>
 
+                        {threat.status === 'Resolved' && threat.resolution && (
+                            <div className="section">
+                                <h3>Resolution Details</h3>
+                                <div className="resolution-details">
+                                    <p>{threat.resolution}</p>
+                                    {threat.resolved_at && (
+                                        <div className="resolution-meta">
+                                            <strong>Resolved on:</strong> {new Date(threat.resolved_at).toLocaleString()}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
                         <div className="section">
                             <h3>Categories</h3>
                             <div className="threat-categories">
@@ -208,7 +222,7 @@ function ThreatDetail() {
                 {activeTab === 'communications' && (
                     <div className="communications-container">
                         <h3>Communications for this Threat</h3>
-                        
+
                         {!username ? (
                             <div className="user-info">
                                 <input
@@ -218,7 +232,7 @@ function ThreatDetail() {
                                     value={username}
                                     onChange={(e) => setUsername(e.target.value)}
                                 />
-                                <button 
+                                <button
                                     onClick={() => setUsername(username)}
                                     className="send-button"
                                 >
@@ -228,7 +242,7 @@ function ThreatDetail() {
                         ) : (
                             <div className="user-info">
                                 <span>Communicating as: <strong>{username}</strong></span>
-                                <button 
+                                <button
                                     onClick={() => setUsername('')}
                                     className="edit-button"
                                 >
@@ -236,14 +250,14 @@ function ThreatDetail() {
                                 </button>
                             </div>
                         )}
-                        
+
                         <div className="message-list">
                             {messages.length === 0 ? (
-                                <div className="empty-messages">No communications yet. Start the conversation!</div>
+                                <div className="empty-messages">No messsages yet...</div>
                             ) : (
                                 messages.map((msg) => (
-                                    <div 
-                                        key={msg.id} 
+                                    <div
+                                        key={msg.id}
                                         className={`message-item ${msg.sender === username ? 'message-user' : 'message-other'}`}
                                     >
                                         <div className="message-sender">{msg.sender}</div>
@@ -254,7 +268,7 @@ function ThreatDetail() {
                             )}
                             <div ref={messagesEndRef} />
                         </div>
-                        
+
                         {username && (
                             <form onSubmit={handleSendMessage} className="message-form">
                                 <input
@@ -265,8 +279,8 @@ function ThreatDetail() {
                                     onChange={(e) => setNewMessage(e.target.value)}
                                     disabled={!username}
                                 />
-                                <button 
-                                    type="submit" 
+                                <button
+                                    type="submit"
                                     className="send-button"
                                     disabled={!username || !newMessage.trim()}
                                 >
