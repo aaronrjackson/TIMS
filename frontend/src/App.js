@@ -1,3 +1,4 @@
+// imports
 import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import './App.css';
@@ -5,6 +6,7 @@ import Form from './Form';
 import ThreatDetail from './ThreatDetail';
 import ThreatEdit from './ThreatEdit'; 
 
+// homepage
 function Home() {
   const [activeTab, setActiveTab] = useState('unresolved');
   const [threats, setThreats] = useState([]);
@@ -98,7 +100,7 @@ function Home() {
         </button>
       </div>
 
-      {/* Tab Content */}
+      {/* tabs */}
       <div className="tab-content">
         {loading ? (
           <div className="loading">Loading threats...</div>
@@ -199,6 +201,7 @@ function Home() {
   );
 }
 
+// routes to each "url"
 function App() {
   return (
     <Router>
