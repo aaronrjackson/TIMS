@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import './App.css';
 import Form from './Form';
 import ThreatDetail from './ThreatDetail';
+import ThreatEdit from './ThreatEdit'; 
 
 function Home() {
   const [activeTab, setActiveTab] = useState('unresolved');
@@ -202,6 +203,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/form" element={<Form />} />
         <Route path="/threats/:id" element={<ThreatDetail />} />
+        <Route path="/threats/:id/edit" element={<ThreatEdit />} />
       </Routes>
     </Router>
   );

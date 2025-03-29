@@ -20,9 +20,10 @@ const groq = new Groq({
 // Middleware
 const cors = require('cors');
 app.use(cors({
-  origin: 'http://localhost:3000', // Your React app's origin
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type']
+  origin: 'http://localhost:3000',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type'],
+  credentials: true
 }));
 app.use(express.json());
 
@@ -34,32 +35,32 @@ app.get("/", (req, res) => {
 // Get single threat by ID
 app.get('/api/threats/:id', (req, res) => {
   const { id } = req.params;
-  
+
   db.get(
     'SELECT * FROM threats WHERE id = ?',
     [id],
     (err, row) => {
       if (err) {
         console.error('Database error:', err);
-        return res.status(500).json({ 
+        return res.status(500).json({
           error: 'Failed to fetch threat',
-          details: err.message 
+          details: err.message
         });
       }
-      
+
       if (!row) {
-        return res.status(404).json({ 
-          error: 'Threat not found' 
+        return res.status(404).json({
+          error: 'Threat not found'
         });
       }
-      
+
       // Parse categories from JSON string
       const threat = {
         ...row,
         categories: JSON.parse(row.categories)
         // Removed aiRecommendation and aiExplanation
       };
-      
+
       res.json(threat);
     }
   );
@@ -136,9 +137,9 @@ app.post('/api/analyze-threat-level', async (req, res) => {
 
   } catch (error) {
     console.error('Error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to analyze threat',
-      details: error.message 
+      details: error.message
     });
   }
 });
@@ -146,25 +147,23 @@ app.post('/api/analyze-threat-level', async (req, res) => {
 // Updated threat submission endpoint
 app.post('/api/threats', async (req, res) => {
 
-  console.log("Trying to send threat to db...");
-
   const { name, description, status, categories, threatLevel } = req.body;
 
   // Validation
   if (!name?.trim() || !description?.trim() || !status || !categories?.length || !threatLevel) {
-    return res.status(400).json({ 
-      error: 'All required fields are missing or empty' 
+    return res.status(400).json({
+      error: 'All required fields are missing or empty'
     });
   }
 
   if (!['Potential', 'Active', 'Resolved'].includes(status)) {
-    return res.status(400).json({ 
-      error: 'Invalid status value' 
+    return res.status(400).json({
+      error: 'Invalid status value'
     });
   }
   if (threatLevel < 1 || threatLevel > 5) {
-    return res.status(400).json({ 
-      error: 'Threat level must be between 1 and 5' 
+    return res.status(400).json({
+      error: 'Threat level must be between 1 and 5'
     });
   }
 
@@ -178,12 +177,12 @@ app.post('/api/threats', async (req, res) => {
       JSON.stringify(categories),
       threatLevel
     ],
-    function(err) {
+    function (err) {
       if (err) {
         console.error('Database error:', err);
-        return res.status(500).json({ 
+        return res.status(500).json({
           error: 'Failed to save threat to database',
-          details: err.message 
+          details: err.message
         });
       }
 
@@ -203,34 +202,84 @@ app.post('/api/threats', async (req, res) => {
 
 app.get('/api/threats', (req, res) => {
   const { status } = req.query;
-  
+
   let query = 'SELECT * FROM threats';
   const params = [];
-  
+
   if (status) {
     query += ' WHERE status = ?';
     params.push(status);
   }
-  
+
   query += ' ORDER BY created_at DESC';
-  
+
   db.all(query, params, (err, rows) => {
     if (err) {
       console.error('Database error:', err);
-      return res.status(500).json({ 
+      return res.status(500).json({
         error: 'Failed to fetch threats',
-        details: err.message 
+        details: err.message
       });
     }
-    
+
     // Parse categories from JSON string
     const threats = rows.map(row => ({
       ...row,
       categories: JSON.parse(row.categories)
     }));
-    
+
     res.json(threats);
   });
+});
+
+app.put('/api/threats/:id', (req, res) => {
+  const { id } = req.params;
+  const { name, description, status, level, categories } = req.body;
+
+  console.log("Incoming PUT request for ID:", id); // Debug log
+  console.log("Request body:", req.body); // Debug log
+
+  // Basic validation
+  if (!name || !description || !status || level === undefined || !categories) {
+    return res.status(400).json({ 
+      error: 'Missing required fields',
+      received: req.body 
+    });
+  }
+
+  db.run(
+    `UPDATE threats SET 
+      name = ?, 
+      description = ?, 
+      status = ?, 
+      level = ?,
+      categories = ?
+     WHERE id = ?`,
+    [
+      name,
+      description,
+      status,
+      level,
+      JSON.stringify(categories),
+      id
+    ],
+    function(err) {
+      if (err) {
+        console.error("Database error:", err);
+        return res.status(500).json({ 
+          error: 'Database operation failed',
+          details: err.message 
+        });
+      }
+      
+      console.log(`Updated ${this.changes} rows`); // Debug log
+      res.json({ 
+        success: true,
+        id: id,
+        changes: this.changes
+      });
+    }
+  );
 });
 
 app.listen(PORT, () => {

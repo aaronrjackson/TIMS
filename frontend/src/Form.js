@@ -1,7 +1,10 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './Form.css';
 
 function Form() {
+  const navigate = useNavigate();
+
   const allCategories = [
     'Personnel / Human Life',
     'Environment',
@@ -29,6 +32,7 @@ function Form() {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // eslint-disable-next-line
   const [error, setError] = useState(null);
   const [aiRecommendation, setAiRecommendation] = useState(null); // Renamed from triageResult
   const [selectedThreatLevel, setSelectedThreatLevel] = useState(null); // Renamed from selectedTriage
@@ -116,7 +120,7 @@ function Form() {
 
       const result = await response.json();
       alert(`Threat submitted successfully! ID: ${result.id}`);
-      
+
       // Reset form
       setFormData({
         threatname: '',
@@ -137,10 +141,15 @@ function Form() {
   };
 
   return (
+
     <div className="form-container">
-      <h1>Threat Submission Form</h1>
-      {error && <div className="error-message">{error}</div>}
-      
+      <div className="header">
+        <button onClick={() => navigate('/')} className="back-button">
+          ← Back to Dashboard
+        </button>
+        <h1>Threat Submission Form</h1>
+      </div>
+
       <form onSubmit={handleSubmit}>
         <div className="form-group">
           <label htmlFor="threatname">Threat name:</label>
@@ -211,7 +220,7 @@ function Form() {
         <div className="modal-overlay">
           <div className="threat-level-modal"> {/* Updated class name */}
             <h2>Threat Level Assessment</h2>
-            
+
             <div className="ai-recommendation">
               <p><strong>AI Recommended Threat Level:</strong> {aiRecommendation.threatLevel}</p>
               <p><strong>Reasoning:</strong> {aiRecommendation.explanation}</p>
@@ -238,13 +247,13 @@ function Form() {
             </div>
 
             <div className="modal-actions">
-              <button 
+              <button
                 onClick={() => setShowThreatLevelModal(false)}
                 className="secondary"
               >
                 Cancel
               </button>
-              <button 
+              <button
                 onClick={handleConfirmThreatLevel} // Updated function name
                 disabled={isSubmitting}
               >
