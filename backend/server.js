@@ -107,14 +107,19 @@ app.post('/api/analyze-threat-level', async (req, res) => {
 
 // Updated threat submission endpoint
 app.post('/api/threats', async (req, res) => {
-  const { name, description, status, categories, analysis } = req.body;
+
+  console.log("Trying to send threat to db...");
+
+  const { name, description, status, categories, threatLevel } = req.body;
 
   // Validation
-  if (!name?.trim() || !description?.trim() || !status || !categories?.length) {
+  if (!name?.trim() || !description?.trim() || !status || !categories?.length || !threatLevel) {
     return res.status(400).json({ 
-      error: 'All fields are required and cannot be empty' 
+      error: 'All required fields are missing or empty' 
     });
   }
+
+  console.log("ok1");
 
   if (!['Potential', 'Active', 'Resolved'].includes(status)) {
     return res.status(400).json({ 
@@ -122,10 +127,26 @@ app.post('/api/threats', async (req, res) => {
     });
   }
 
+  console.log("ok2");
+
+  if (threatLevel < 1 || threatLevel > 5) {
+    return res.status(400).json({ 
+      error: 'Threat level must be between 1 and 5' 
+    });
+  }
+
+  console.log("ok3");
+
   db.run(
-    `INSERT INTO threats (name, description, status, categories, ai_analysis)
+    `INSERT INTO threats (name, description, status, categories, level)
      VALUES (?, ?, ?, ?, ?)`,
-    [name, description, status, JSON.stringify(categories), analysis || null],
+    [
+      name,
+      description,
+      status,
+      JSON.stringify(categories),
+      threatLevel
+    ],
     function(err) {
       if (err) {
         console.error('Database error:', err);
@@ -141,12 +162,13 @@ app.post('/api/threats', async (req, res) => {
         description,
         status,
         categories,
-        analysis,
+        level: threatLevel,
         created_at: new Date().toISOString(),
         message: 'Threat submitted successfully'
       });
     }
   );
+  console.log("ok4");
 });
 
 app.listen(PORT, () => {

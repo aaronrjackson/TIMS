@@ -51,72 +51,73 @@
     background-color: #45a049;
   }
 
-  .modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.75);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-  }
-  
-  .triage-modal {
-    background-color: white;
-    padding: 2rem;
-    border-radius: 8px;
-    width: 80%;
-    max-width: 600px;
-    max-height: 80vh;
-    overflow-y: auto;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  }
-  
-  .modal-actions {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 2rem;
-  }
-  
-  .modal-actions button {
-    padding: 0.5rem 1rem;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-  
-  .modal-actions button.secondary {
-    background-color: #f0f0f0;
-    border: 1px solid #ccc;
-    color: #000
-  }
-  
-  .modal-actions button.primary {
-    background-color: #007bff;
-    color: white;
-    border: none;
-  }
-  
-  .triage-options {
-    margin: 1rem 0;
-  }
-  
-  .triage-option {
-    margin: 0.5rem 0;
-    padding: 0.5rem;
-    border-radius: 4px;
-    background-color: #f8f9fa;
-  }
-  
-  .triage-option input[type="radio"] {
-    margin-right: 0.5rem;
-  }
-  
-  .ai-recommendation {
-    background-color: #e7f5ff;
-    padding: 1rem;
-    border-radius: 4px;
-    margin-bottom: 1rem;
-  }
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.75);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.threat-level-modal {  /* Changed from .triage-modal */
+  background-color: white;
+  padding: 2rem;
+  border-radius: 8px;
+  width: 80%;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 2rem;
+}
+
+.modal-actions button {
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.modal-actions button.secondary {
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  color: #000;
+}
+
+.modal-actions button:not(.secondary) {
+  background-color: #007bff;
+  color: white;
+  border: none;
+}
+
+.threat-level-options {  /* Changed from .triage-options */
+  margin: 1rem 0;
+}
+
+.threat-level-option {  /* Changed from .triage-option */
+  margin: 0.5rem 0;
+  padding: 0.5rem;
+  border-radius: 4px;
+  background-color: #f8f9fa;
+}
+
+.threat-level-option input[type="radio"] {  /* Changed from .triage-option */
+  margin-right: 0.5rem;
+}
+
+.ai-recommendation {
+  background-color: #e7f5ff;
+  padding: 1rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}

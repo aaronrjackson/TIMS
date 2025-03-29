@@ -13,7 +13,7 @@ function Form() {
   ];
 
   const statusOptions = ['Potential', 'Active', 'Resolved'];
-  const triageLevels = [
+  const threatLevelOptions = [  // Renamed from threatLevels to threatLevelOptions
     { level: 5, label: '5 - Critical (Immediate action required)' },
     { level: 4, label: '4 - High (Address within 24 hours)' },
     { level: 3, label: '3 - Medium (Address within week)' },
@@ -30,9 +30,9 @@ function Form() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
-  const [triageResult, setTriageResult] = useState(null);
-  const [selectedTriage, setSelectedTriage] = useState(null);
-  const [showTriageModal, setShowTriageModal] = useState(false);
+  const [aiRecommendation, setAiRecommendation] = useState(null); // Renamed from triageResult
+  const [selectedThreatLevel, setSelectedThreatLevel] = useState(null); // Renamed from selectedTriage
+  const [showThreatLevelModal, setShowThreatLevelModal] = useState(false); // Renamed from showTriageModal
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -72,15 +72,15 @@ function Form() {
       }
 
       const result = await response.json();
-      const [triageLevel, ...explanationParts] = result.analysis.split(' ');
+      const [threatLevel, ...explanationParts] = result.analysis.split(' ');
       const explanation = explanationParts.join(' ').trim();
 
-      setTriageResult({
-        triageLevel: parseInt(triageLevel),
+      setAiRecommendation({
+        threatLevel: parseInt(threatLevel),
         explanation
       });
-      setSelectedTriage(parseInt(triageLevel));
-      setShowTriageModal(true);
+      setSelectedThreatLevel(parseInt(threatLevel));
+      setShowThreatLevelModal(true);
 
     } catch (err) {
       console.error('Submission error:', err);
@@ -90,7 +90,7 @@ function Form() {
     }
   };
 
-  const handleConfirmTriage = async () => {
+  const handleConfirmThreatLevel = async () => { // Renamed from handleConfirmTriage
     setIsSubmitting(true);
     setError(null);
 
@@ -103,9 +103,9 @@ function Form() {
           description: formData.description,
           status: formData.status,
           categories: formData.categories,
-          triageLevel: selectedTriage,
-          aiTriageRecommendation: triageResult.triageLevel,
-          aiTriageExplanation: triageResult.explanation
+          threatLevel: selectedThreatLevel,
+          aiRecommendation: aiRecommendation.threatLevel,
+          aiExplanation: aiRecommendation.explanation
         }),
       });
 
@@ -124,9 +124,9 @@ function Form() {
         status: 'Potential',
         categories: []
       });
-      setTriageResult(null);
-      setSelectedTriage(null);
-      setShowTriageModal(false);
+      setAiRecommendation(null);
+      setSelectedThreatLevel(null);
+      setShowThreatLevelModal(false);
 
     } catch (err) {
       console.error('Final submission error:', err);
@@ -135,8 +135,6 @@ function Form() {
       setIsSubmitting(false);
     }
   };
-
-  
 
   return (
     <div className="form-container">
@@ -208,31 +206,32 @@ function Form() {
       </form>
 
       {/* Triage Level Modal */}
-      {showTriageModal && (
+      {/* Threat Level Modal - Renamed from Triage Level Modal */}
+      {showThreatLevelModal && aiRecommendation && (
         <div className="modal-overlay">
-          <div className="triage-modal">
-            <h2>Threat Level</h2>
+          <div className="threat-level-modal"> {/* Updated class name */}
+            <h2>Threat Level Assessment</h2>
             
             <div className="ai-recommendation">
-              <p><strong>AI Recommended Threat Level:</strong> {triageResult.triageLevel}</p>
-              <p><strong>Reasoning:</strong> {triageResult.explanation}</p>
+              <p><strong>AI Recommended Threat Level:</strong> {aiRecommendation.threatLevel}</p>
+              <p><strong>Reasoning:</strong> {aiRecommendation.explanation}</p>
             </div>
 
-            <div className="triage-selection">
+            <div className="threat-level-selection"> {/* Updated class name */}
               <h3>Select Threat Level:</h3>
-              <p> <i>You can choose to follow the AI's recommendation, or submit your own.</i></p>
-              <div className="triage-options">
-                {triageLevels.map(({ level, label }) => (
-                  <div key={level} className="triage-option">
+              <p><i>You can choose to follow the AI's recommendation, or submit your own.</i></p>
+              <div className="threat-level-options"> {/* Updated class name */}
+                {threatLevelOptions.map(({ level, label }) => ( // Fixed variable name
+                  <div key={level} className="threat-level-option"> {/* Updated class name */}
                     <input
                       type="radio"
-                      id={`triage-${level}`}
-                      name="triageLevel"
+                      id={`threat-level-${level}`}
+                      name="threatLevel"
                       value={level}
-                      checked={selectedTriage === level}
-                      onChange={() => setSelectedTriage(level)}
+                      checked={selectedThreatLevel === level}
+                      onChange={() => setSelectedThreatLevel(level)}
                     />
-                    <label htmlFor={`triage-${level}`}>{label}</label>
+                    <label htmlFor={`threat-level-${level}`}>{label}</label>
                   </div>
                 ))}
               </div>
@@ -240,21 +239,20 @@ function Form() {
 
             <div className="modal-actions">
               <button 
-                onClick={() => setShowTriageModal(false)}
+                onClick={() => setShowThreatLevelModal(false)}
                 className="secondary"
               >
                 Cancel
               </button>
               <button 
-                onClick={handleConfirmTriage}
+                onClick={handleConfirmThreatLevel} // Updated function name
                 disabled={isSubmitting}
               >
-                {isSubmitting ? 'Submitting...' : 'Confirm Triage Level'}
+                {isSubmitting ? 'Submitting...' : 'Confirm Threat Level'}
               </button>
             </div>
           </div>
         </div>
-        
       )}
     </div>
   );
