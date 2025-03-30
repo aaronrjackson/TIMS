@@ -52,12 +52,12 @@ function createTables() {
     // In database.js, inside the createTables() function
     db.run("DROP TABLE IF EXISTS threat_logs");
     db.run(`
-      CREATE TABLE threat_logs (
+      CREATE TABLE IF NOT EXISTS threat_logs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         threat_id INTEGER NOT NULL,
         action TEXT NOT NULL,
         details TEXT,
-        user TEXT NOT NULL,
+        username TEXT NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (threat_id) REFERENCES threats (id)
       )

@@ -151,7 +151,7 @@ app.post('/api/threats', async (req, res) => {
         }
   
         db.run(
-          `INSERT INTO threat_logs (threat_id, action, details, user) 
+          `INSERT INTO threat_logs (threat_id, action, details, username) 
           VALUES (?, ?, ?, ?)`,
           [
             this.lastID,
@@ -488,7 +488,7 @@ app.put('/api/threats/:id', (req, res) => {
         });
       }
       db.run(
-        'INSERT INTO threat_logs (threat_id, action, details, user) VALUES (?, ?, ?, ?)',
+        'INSERT INTO threat_logs (threat_id, action, details, username) VALUES (?, ?, ?, ?)',
         [id, 'Threat Updated', `Updated threat "${name}" (Status: ${status}, Level: ${level})`, username],
         (logErr) => {
             if (logErr) console.error('Failed to create log entry:', logErr);
