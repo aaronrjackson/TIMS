@@ -100,7 +100,6 @@ function ThreatDetail() {
         }
     }, [messages, activeTab]);
     
-    // Add this new useEffect:
     useEffect(() => {
         if (activeTab === 'logs') {
             fetchLogs();

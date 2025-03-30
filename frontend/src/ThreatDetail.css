@@ -76,6 +76,7 @@
     border-radius: 4px;
     color: white;
     font-weight: bold;
+    color: white !important; /* force white text for all */
   }
   
   .level-1 { background-color: #4CAF50; }
@@ -181,8 +182,6 @@
     transform: translateY(-1px);
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   }
-
-  /* Add this to your ThreatDetail.css file */
 
 .communications-container {
   margin-top: 1rem;

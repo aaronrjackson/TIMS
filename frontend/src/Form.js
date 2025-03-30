@@ -63,7 +63,6 @@ function Form() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Add this validation check
     if (formData.status === 'Resolved' && !formData.resolution.trim()) {
       setError('Please provide resolution details for resolved threats');
       return;
