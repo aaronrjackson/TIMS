@@ -1,6 +1,7 @@
 import React from 'react';
-import { Bar, Pie, Line } from 'react-chartjs-2';
+import { Bar, Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, registerables } from 'chart.js';
+import AIAnalysis from './AIAnalysis';
 import './ThreatCharts.css';
 
 ChartJS.register(...registerables);
@@ -33,14 +34,6 @@ const ThreatCharts = ({ threats }) => {
   const sortedCategories = Object.entries(categoryCounts)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5); // Top 5 categories
-  
-  // Sort months chronologically
-  const sortedMonths = Object.entries(monthlyCounts)
-    .sort((a, b) => {
-      const [aMonth, aYear] = a[0].split('/').map(Number);
-      const [bMonth, bYear] = b[0].split('/').map(Number);
-      return aYear - bYear || aMonth - bMonth;
-    });
   
   // Chart data configurations
   const levelData = {
@@ -89,17 +82,17 @@ const ThreatCharts = ({ threats }) => {
     }]
   };
   
-  const trendData = {
-    labels: sortedMonths.map(item => item[0]),
-    datasets: [{
-      label: 'Threats Over Time',
-      data: sortedMonths.map(item => item[1]),
-      backgroundColor: 'rgba(75, 192, 192, 0.6)',
-      borderColor: 'rgba(75, 192, 192, 1)',
-      borderWidth: 1,
-      tension: 0.1
-    }]
-  };
+//   const trendData = {
+//     labels: sortedMonths.map(item => item[0]),
+//     datasets: [{
+//       label: 'Threats Over Time',
+//       data: sortedMonths.map(item => item[1]),
+//       backgroundColor: 'rgba(75, 192, 192, 0.6)',
+//       borderColor: 'rgba(75, 192, 192, 1)',
+//       borderWidth: 1,
+//       tension: 0.1
+//     }]
+//   };
   
   return (
     <div className="charts-container">
@@ -148,7 +141,7 @@ const ThreatCharts = ({ threats }) => {
           />
         </div>
       </div>
-      <div className="chart-row">
+      {/* <div className="chart-row">
         <div className="chart-container">
           <h3>Threats Over Time</h3>
           <Line 
@@ -178,9 +171,14 @@ const ThreatCharts = ({ threats }) => {
             }} 
           />
         </div>
+      </div> */}
+      <div className="ai-analysis-container">
+        <AIAnalysis threats={threats} />
       </div>
     </div>
   );
 };
+
+
 
 export default ThreatCharts;

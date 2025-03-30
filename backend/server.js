@@ -268,7 +268,7 @@ app.get('/api/threats/stats', (req, res) => { // queries have to be stacking for
       console.error('Database error:', err);
       return res.status(500).json({ error: err.message });
     }
-    
+
     // get counts by category and sort by desc
     db.all(`
       SELECT 
@@ -282,7 +282,7 @@ app.get('/api/threats/stats', (req, res) => { // queries have to be stacking for
         console.error('Database error:', err);
         return res.status(500).json({ error: err.message });
       }
-      
+
       // get monthly counts
       db.all(`
         SELECT 
@@ -296,7 +296,7 @@ app.get('/api/threats/stats', (req, res) => { // queries have to be stacking for
           console.error('Database error:', err);
           return res.status(500).json({ error: err.message });
         }
-        
+
         res.json({
           levels: levelCounts,
           categories: categoryCounts,
@@ -305,6 +305,53 @@ app.get('/api/threats/stats', (req, res) => { // queries have to be stacking for
       });
     });
   });
+});
+
+// AI FULL DATA ANALYSIS ENDPOINT!!!
+app.post('/api/threats/ai-analysis', async (req, res) => {
+  try {
+    // query everything from db
+    db.all('SELECT * FROM threats', [], async (err, threats) => {
+      if (err) {
+        console.error('Database error:', err);
+        return res.status(500).json({ error: 'Failed to fetch threats' });
+      }
+
+      // Prepare the prompt with threat data
+      const prompt = `
+        Analyze the following threat data and identify patterns, recurring threats, 
+        and anomalies. Focus on threat names, categories, and descriptions.
+        Provide a concise summary of your findings in bullet points.
+        Highlight any particularly concerning patterns.
+
+        Threat Data:
+        ${threats.map(threat => `
+          - Name: ${threat.name}
+          - Categories: ${JSON.parse(threat.categories).join(', ')}
+          - Description: ${threat.description}
+          - Level: ${threat.level}
+          - Status: ${threat.status}
+          - Reported: ${threat.created_at}
+        `).join('\n')}
+
+        Analysis:
+      `;
+
+      // Send to Groq
+      const chatCompletion = await groq.chat.completions.create({
+        messages: [{ role: "user", content: prompt }],
+        model: "llama3-70b-8192",
+        temperature: 0.7,
+        max_tokens: 1000
+      });
+
+      const analysis = chatCompletion.choices[0]?.message?.content;
+      res.json({ analysis });
+    });
+  } catch (error) {
+    console.error('AI analysis error:', error);
+    res.status(500).json({ error: 'AI analysis failed' });
+  }
 });
 
 app.put('/api/threats/:id', (req, res) => {
@@ -361,60 +408,60 @@ app.put('/api/threats/:id', (req, res) => {
 
 // Get all messages for a specific threat
 app.get('/api/threats/:threatId/messages', (req, res) => {
-    const { threatId } = req.params;
-    
-    db.all(
-      'SELECT * FROM threat_messages WHERE threat_id = ? ORDER BY created_at ASC',
-      [threatId],
-      (err, rows) => {
-        if (err) {
-          console.error('Database error:', err);
-          return res.status(500).json({
-            error: 'Failed to fetch messages',
-            details: err.message
-          });
-        }
-        
-        res.json(rows);
-      }
-    );
-  });
-  
-  // Post a new message for a specific threat
-  app.post('/api/threats/:threatId/messages', (req, res) => {
-    const { threatId } = req.params;
-    const { sender, message } = req.body;
-    
-    // Validation
-    if (!sender?.trim() || !message?.trim()) {
-      return res.status(400).json({
-        error: 'Sender and message are required'
-      });
-    }
-    
-    db.run(
-      'INSERT INTO threat_messages (threat_id, sender, message) VALUES (?, ?, ?)',
-      [threatId, sender, message],
-      function(err) {
-        if (err) {
-          console.error('Database error:', err);
-          return res.status(500).json({
-            error: 'Failed to save message',
-            details: err.message
-          });
-        }
-        
-        // Return the created message with its ID
-        res.status(201).json({
-          id: this.lastID,
-          threat_id: threatId,
-          sender,
-          message,
-          created_at: new Date().toISOString()
+  const { threatId } = req.params;
+
+  db.all(
+    'SELECT * FROM threat_messages WHERE threat_id = ? ORDER BY created_at ASC',
+    [threatId],
+    (err, rows) => {
+      if (err) {
+        console.error('Database error:', err);
+        return res.status(500).json({
+          error: 'Failed to fetch messages',
+          details: err.message
         });
       }
-    );
-  });
+
+      res.json(rows);
+    }
+  );
+});
+
+// Post a new message for a specific threat
+app.post('/api/threats/:threatId/messages', (req, res) => {
+  const { threatId } = req.params;
+  const { sender, message } = req.body;
+
+  // Validation
+  if (!sender?.trim() || !message?.trim()) {
+    return res.status(400).json({
+      error: 'Sender and message are required'
+    });
+  }
+
+  db.run(
+    'INSERT INTO threat_messages (threat_id, sender, message) VALUES (?, ?, ?)',
+    [threatId, sender, message],
+    function (err) {
+      if (err) {
+        console.error('Database error:', err);
+        return res.status(500).json({
+          error: 'Failed to save message',
+          details: err.message
+        });
+      }
+
+      // Return the created message with its ID
+      res.status(201).json({
+        id: this.lastID,
+        threat_id: threatId,
+        sender,
+        message,
+        created_at: new Date().toISOString()
+      });
+    }
+  );
+});
 
 app.listen(PORT, () => {
   console.log(`Server is now running on http://localhost:${PORT}`);
