@@ -13,7 +13,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
 });
 
 function createTables() {
-  db.run("DROP TABLE IF EXISTS threats");
+  
   db.run(`
       CREATE TABLE IF NOT EXISTS threats (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -32,9 +32,9 @@ function createTables() {
         console.log('Successfully created threats table with correct schema');
       }
     });
-    db.run("DROP TABLE IF EXISTS threat_messages");
+   
     db.run(`
-      CREATE TABLE threat_messages (
+      CREATE TABLE IF NOT EXISTS threat_messages (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         threat_id INTEGER NOT NULL,
         sender TEXT NOT NULL,
@@ -50,7 +50,6 @@ function createTables() {
       }
     });
     // In database.js, inside the createTables() function
-    db.run("DROP TABLE IF EXISTS threat_logs");
     db.run(`
       CREATE TABLE IF NOT EXISTS threat_logs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
