@@ -110,55 +110,80 @@ app.post('/api/analyze-threat-level', async (req, res) => {
 
 // THREAT SUBMISSION ENDPOINT!!!
 app.post('/api/threats', async (req, res) => {
-  const { name, description, status, categories, threatLevel, resolution } = req.body; // Add resolution
-
-  // Validation
-  if (!name?.trim() || !description?.trim() || !status || !categories?.length || !threatLevel) {
-    return res.status(400).json({
-      error: 'All required fields are missing or empty'
-    });
-  }
-
-  if (status === 'Resolved' && !resolution?.trim()) {
-    return res.status(400).json({
-      error: 'Resolution details are required for resolved threats'
-    });
-  }
-
-  db.run(
-    `INSERT INTO threats (name, description, status, categories, level, resolution)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-    [
-      name,
-      description,
-      status,
-      JSON.stringify(categories),
-      threatLevel,
-      status === 'Resolved' ? resolution : null
-    ],
-    function (err) {
-      if (err) {
-        console.error('Database error:', err);
-        return res.status(500).json({
-          error: 'Failed to save threat to database',
-          details: err.message
-        });
-      }
-
-      res.status(201).json({
-        id: this.lastID,
+    const {username, name, description, status, categories, threatLevel, resolution } = req.body;
+  
+    // Validation
+    if (!name?.trim() || !description?.trim() || !status || !categories?.length || !threatLevel) {
+      return res.status(400).json({
+        error: 'All required fields are missing or empty'
+      });
+    }
+    if (!username){
+      return res.status(400).json({
+        error: 'Username is required'
+      });
+    }
+  
+    if (status === 'Resolved' && !resolution?.trim()) {
+      return res.status(400).json({
+        error: 'Resolution details are required for resolved threats'
+      });
+    }
+  
+    db.run(
+      `INSERT INTO threats (name, description, status, categories, level, resolution)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [
         name,
         description,
         status,
-        categories,
-        level: threatLevel,
-        resolution: status === 'Resolved' ? resolution : null,
-        created_at: new Date().toISOString(),
-        message: 'Threat submitted successfully'
-      });
-    }
-  );
-});
+        JSON.stringify(categories),
+        threatLevel,
+        status === 'Resolved' ? resolution : null
+      ],
+      function (err) {
+        if (err) {
+          console.error('Database error:', err);
+          return res.status(500).json({
+            error: 'Failed to save threat to database',
+            details: err.message
+          });
+        }
+  
+        db.run(
+          `INSERT INTO threat_logs (threat_id, action, details, user) 
+          VALUES (?, ?, ?, ?)`,
+          [
+            this.lastID,
+            'Threat Creation ',
+            'Threat created by ' + username,
+            username
+          ],
+          function (err) {
+            if (err) {
+              console.error('Database error:', err);
+              return res.status(500).json({
+                error: 'Failed to save log to database',
+                details: err.message
+              });
+            }
+            
+            res.status(201).json({
+              id: this.lastID,
+              name,
+              description,
+              status,
+              categories,
+              level: threatLevel,
+              resolution: status === 'Resolved' ? resolution : null,
+              created_at: new Date().toISOString(),
+              message: 'Threat submitted successfully'
+            });
+          }
+        ); 
+      }
+    ); 
+  });
 
 // 
 app.get('/api/threats/unresolved', (req, res) => {
@@ -225,6 +250,8 @@ app.get('/api/threats', (req, res) => {
 // Get single threat by ID
 app.get('/api/threats/:id', (req, res) => {
   const { id } = req.params;
+  const { name, description, status, categories, threatLevel, resolution } = req.body;
+  
 
   db.get(
     'SELECT * FROM threats WHERE id = ?',
@@ -251,10 +278,31 @@ app.get('/api/threats/:id', (req, res) => {
         // Removed aiRecommendation and aiExplanation
       };
 
+      
       res.json(threat);
     }
   );
 });
+// Get all logs for a specific threat
+app.get('/api/threats/:id/logs', (req, res) => {
+    const { id } = req.params;
+    
+    db.all(
+      'SELECT * FROM threat_logs WHERE threat_id = ? ORDER BY created_at DESC',
+      [id],
+      (err, rows) => {
+        if (err) {
+          console.error('Database error:', err);
+          return res.status(500).json({
+            error: 'Failed to fetch logs',
+            details: err.message
+          });
+        }
+        
+        res.json(rows);
+      }
+    );
+  });
 
 // THREAT CHARTS ENDPOINT!!!
 app.get('/api/threats/stats', (req, res) => { // queries have to be stacking for some reason
@@ -383,7 +431,7 @@ app.post('/api/threats/ai-analysis', async (req, res) => {
 
 app.put('/api/threats/:id', (req, res) => {
   const { id } = req.params;
-  const { name, description, status, level, categories, resolution } = req.body; // Add resolution here
+  const { username, name, description, status, level, categories, resolution } = req.body; // Add resolution here
 
   console.log("Incoming update for threat:", id);
   console.log("Request body:", req.body);
@@ -422,6 +470,13 @@ app.put('/api/threats/:id', (req, res) => {
           details: err.message
         });
       }
+      db.run(
+        'INSERT INTO threat_logs (threat_id, action, details, user) VALUES (?, ?, ?, ?)',
+        [id, 'Threat Updated', `Updated threat "${name}" (Status: ${status}, Level: ${level})`, username],
+        (logErr) => {
+            if (logErr) console.error('Failed to create log entry:', logErr);
+        }
+      );
 
       console.log(`Updated ${this.changes} rows`);
       res.json({

@@ -25,6 +25,7 @@ function Form() {
   ];
 
   const [formData, setFormData] = useState({
+    username: '',
     threatname: '',
     description: '',
     status: 'Potential',
@@ -76,6 +77,7 @@ function Form() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          ...formData,
           name: formData.threatname,
           description: formData.description,
           status: formData.status,
@@ -130,6 +132,7 @@ function Form() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          username: formData.username,
           name: formData.threatname,
           description: formData.description,
           status: formData.status,
@@ -157,6 +160,7 @@ function Form() {
 
       // Reset form
       setFormData({
+        username: '',
         threatname: '',
         description: '',
         status: 'Potential',
@@ -202,6 +206,19 @@ function Form() {
       </div>
 
       <form onSubmit={handleSubmit}>
+        <div className="form-group">
+
+          <label htmlFor="username">Username: </label>
+          <input
+            type="text"
+            id="username"
+            name="username"
+            value={formData.username}
+            onChange={handleChange}
+            required
+          />
+        </div>
+
         <div className="form-group">
           <label htmlFor="threatname">Threat name:</label>
           <input

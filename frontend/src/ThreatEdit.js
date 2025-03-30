@@ -7,6 +7,7 @@ function ThreatEdit() {
   const navigate = useNavigate();
   const [threat, setThreat] = useState(null);
   const [formData, setFormData] = useState({
+    username: '',
     name: '',
     description: '',
     status: 'Potential',
@@ -31,6 +32,7 @@ function ThreatEdit() {
         const data = await response.json();
         setThreat(data);
         setFormData({
+          username: data.username,
           name: data.name,
           description: data.description,
           status: data.status,
@@ -80,6 +82,8 @@ function ThreatEdit() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          ...formData,
+          username: formData.username,
           name: formData.name,
           description: formData.description,
           status: formData.status,
@@ -152,6 +156,18 @@ function ThreatEdit() {
       )}
 
       <form onSubmit={handleSubmit} className="edit-form">
+
+      <div className="form-group">
+          <label>Username:</label>
+          <input
+            type="text"
+            name="username"
+            value={formData.username}
+            onChange={handleChange}
+            required
+          />
+        </div>
+
         <div className="form-group">
           <label>Threat Name:</label>
           <input
