@@ -245,6 +245,47 @@
   color: #f44336;
 }
 
+.actions {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.cta-button {
+  padding: 10px 20px;
+  background-color: #4a6fa5;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  text-decoration: none;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.cta-button.secondary {
+  background-color: #6c757d;
+}
+
+.cta-button:hover {
+  background-color: #3a5a80;
+}
+
+.cta-button.secondary:hover {
+  background-color: #5a6268;
+}
+
+.cta-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.error-message {
+  color: #dc3545;
+  margin-left: 10px;
+}
+
 @keyframes App-logo-spin {
   from {
     transform: rotate(0deg);

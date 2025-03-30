@@ -13,6 +13,8 @@ function Home() {
   const [threats, setThreats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isGeneratingSamples, setIsGeneratingSamples] = useState(false); //samp data generation
+  const [generationError, setGenerationError] = useState(null); // samp data generation
 
   useEffect(() => {
     const fetchThreats = async () => {
@@ -71,6 +73,39 @@ function Home() {
       5: 'Critical'
     };
     return levels[level] || 'Unknown';
+  };
+
+  const generateSampleData = async () => {
+    setIsGeneratingSamples(true);
+    setGenerationError(null);
+    
+    try {
+      const response = await fetch('http://localhost:3001/api/generate-sample-threats', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate samples');
+      }
+
+      const result = await response.json();
+      console.log('Generated samples:', result);
+      
+      // Refresh the current view
+      const currentTab = activeTab;
+      setActiveTab(''); // Force refresh
+      setTimeout(() => setActiveTab(currentTab), 100);
+      
+    } catch (error) {
+      console.error('Generation error:', error);
+      setGenerationError(error.message);
+    } finally {
+      setIsGeneratingSamples(false);
+    }
   };
 
   return (
@@ -201,6 +236,14 @@ function Home() {
 
       <div className="actions">
         <Link to="/form" className="cta-button">Report New Threat</Link>
+        <button 
+          onClick={generateSampleData}
+          disabled={isGeneratingSamples}
+          className="cta-button secondary"
+        >
+          {isGeneratingSamples ? 'Generating...' : 'Load Sample Data'}
+        </button>
+        {generationError && <div className="error-message">{generationError}</div>}
       </div>
     </div>
   );

@@ -490,6 +490,91 @@ app.post('/api/threats/:threatId/messages', (req, res) => {
   );
 });
 
+// USE GROQ TO MAKE SAMPLE DATA
+app.post('/api/generate-sample-threats', async (req, res) => {
+  try {
+    const prompt = `
+      Generate 8 realistic cybersecurity threat examples for a professional corporate environment.
+      Return ONLY a JSON array with objects containing:
+      - name (string)
+      - description (string)
+      - categories (array of strings)
+      - status (either "Potential", "Active", or "Resolved)
+      - level (number 1-5)
+      - resolution (string, only if status is "Resolved")
+
+      Example format:
+      [
+        {
+          "name": "Phishing Email Campaign",
+          "description": "Employees receiving emails pretending to be from IT department asking for credentials",
+          "categories": ["Phishing", "Email"],
+          "status": "Active",
+          "level": 4
+        },
+        ...
+      ]
+    `;
+
+    const chatCompletion = await groq.chat.completions.create({
+      messages: [{ role: "user", content: prompt }],
+      model: "llama3-70b-8192",
+      response_format: { type: "json_object" }
+    });
+
+    // Parse the JSON response
+    let sampleThreats;
+    try {
+      const responseContent = chatCompletion.choices[0]?.message?.content;
+      sampleThreats = JSON.parse(responseContent);
+      
+      // Handle case where Groq wraps the array in an object
+      if (sampleThreats && !Array.isArray(sampleThreats)) {
+        sampleThreats = sampleThreats.threats || Object.values(sampleThreats)[0];
+      }
+    } catch (e) {
+      throw new Error('Failed to parse AI response: ' + e.message);
+    }
+
+    // insert into database
+    const insertedIds = await Promise.all(
+      sampleThreats.map(threat => 
+        new Promise((resolve, reject) => {
+          db.run(
+            `INSERT INTO threats (name, description, status, categories, level, resolution, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`,
+            [
+              threat.name,
+              threat.description,
+              threat.status || 'Potential',
+              JSON.stringify(threat.categories || []),
+              threat.level || 3,
+              threat.resolution || null
+            ],
+            function(err) {
+              if (err) reject(err);
+              else resolve(this.lastID);
+            }
+          );
+        })
+      )
+    );
+
+    res.json({
+      success: true,
+      count: insertedIds.length,
+      threats: sampleThreats
+    });
+
+  } catch (error) {
+    console.error('Sample generation error:', error);
+    res.status(500).json({
+      error: 'Failed to generate samples',
+      details: error.message
+    });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server is now running on http://localhost:${PORT}`);
 });
