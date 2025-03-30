@@ -339,6 +339,20 @@ app.post('/api/threats/ai-analysis', async (req, res) => {
         Keep it this way, and do not deviate from this pattern EVER.
         You will only answer the prompt in that format. NO OTHER WAY.
 
+        As an example, you might produce an answer that looks something like this (without quotes):
+        "The amount of threats regarding IT services seems to be steadly increasing over the last 2 months.|There is a number of threats as a result of employees not taking proper security measures, like not wearing their ID around their neck or leaving passwords on sticky notes.|The unknown man jumping the company perimeter was an anomalous event, however we shouldn't disregard this as it could pave the way for future similar events to occur on larger scales.|A summary based on all of the data you look at would go here."
+        You will include NOTHING ELSE in your response, just the answers to each section with those separations.
+        Also, DO NOT include '<' or '>' characters in your response either. Those were just there to illustrate
+        the format for you.
+
+        You can be more verbose and identify, say, multiple patterns for instance, than this in each section if you wish. This was merely to give you a guide of
+        how to format your answer.
+
+        If for some reason you are given no data, simply output "NO DATA|NO DATA|NO DATA|NO DATA" as your answer (NO QUOTES).
+
+        Also, DO NOT preface your results EVER with anything along the lines of "Here is my analysis of the threat data:".
+        Simply answer the questions in the format we gave you.
+
         All Threat Data:
         ${threats.map(threat => `
           - Name: ${threat.name}
@@ -348,8 +362,6 @@ app.post('/api/threats/ai-analysis', async (req, res) => {
           - Status: ${threat.status}
           - Reported: ${threat.created_at}
         `).join('\n')}
-
-        Analysis:
       `;
 
       // Send to Groq
