@@ -570,7 +570,7 @@ app.post('/api/generate-sample-threats', async (req, res) => {
       Return ONLY a JSON array with objects containing:
       - name (string)
       - description (string)
-      - categories (any number of "Personnel / Human Life", "Environment", "IT Services", "Physical Assets", "Sensitive Data", "Operational Continuity", or "General Security")
+      - categories describing what this is a threat to (any number of "Personnel / Human Life", "Environment", "IT Services", "Physical Assets", "Sensitive Data", "Operational Continuity", or "General Security")
       - status (either "Potential", "Active", or "Resolved)
       - level (number 1-5)
       - resolution (string, only if status is "Resolved")
