@@ -359,7 +359,6 @@ app.get('/api/threats/stats', (req, res) => { // queries have to be stacking for
 });
 
 // AI FULL DATA ANALYSIS ENDPOINT!!!
-// AI FULL DATA ANALYSIS ENDPOINT (JSON VERSION)
 app.post('/api/threats/ai-analysis', async (req, res) => {
   try {
     // Query everything from db
@@ -571,7 +570,7 @@ app.post('/api/generate-sample-threats', async (req, res) => {
       Return ONLY a JSON array with objects containing:
       - name (string)
       - description (string)
-      - categories (array of strings)
+      - categories (any number of "Personnel / Human Life", "Environment", "IT Services", "Physical Assets", "Sensitive Data", "Operational Continuity", or "General Security")
       - status (either "Potential", "Active", or "Resolved)
       - level (number 1-5)
       - resolution (string, only if status is "Resolved")
