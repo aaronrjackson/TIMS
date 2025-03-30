@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import './ThreatDetail.css';
 
@@ -15,6 +15,9 @@ function ThreatDetail() {
     const [newMessage, setNewMessage] = useState('');
     const [username, setUsername] = useState(localStorage.getItem('chatUsername') || '');
     const messagesEndRef = useRef(null);
+
+    const [logs, setLogs] = useState([]);
+    const [logsLoading, setLogsLoading] = useState(false);
 
     useEffect(() => {
         const fetchThreat = async () => {
@@ -40,6 +43,39 @@ function ThreatDetail() {
         fetchThreat();
     }, [id]);
 
+    // Memoize fetchMessages and fetchLogs with useCallback
+    const fetchMessages = useCallback(async () => {
+        try {
+            const response = await fetch(`http://localhost:3001/api/threats/${id}/messages`);
+            if (!response.ok) {
+                throw new Error(`Failed to fetch messages: ${response.status}`);
+            }
+            const data = await response.json();
+            setMessages(data);
+        } catch (err) {
+            console.error('Error fetching messages:', err);
+        }
+    }, [id]);
+
+    const fetchLogs = useCallback(async () => {
+        try {
+            setLogsLoading(true);
+            const response = await fetch(`http://localhost:3001/api/threats/${id}/logs`);
+            
+            if (!response.ok) {
+                throw new Error(`Failed to fetch logs: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            setLogs(data);
+        } catch (err) {
+            console.error('Error fetching logs:', err);
+            setError(err.message);
+        } finally {
+            setLogsLoading(false);
+        }
+    }, [id]);
+
     // Fetch messages when the communications tab is active
     useEffect(() => {
         if (activeTab === 'communications') {
@@ -48,8 +84,7 @@ function ThreatDetail() {
             const interval = setInterval(fetchMessages, 3000);
             return () => clearInterval(interval);
         }
-    // eslint-disable-next-line 
-    }, [activeTab, id]);
+    }, [activeTab, fetchMessages]);
 
     // Save username to localStorage when it changes
     useEffect(() => {
@@ -64,19 +99,13 @@ function ThreatDetail() {
             scrollToBottom();
         }
     }, [messages, activeTab]);
-
-    const fetchMessages = async () => {
-        try {
-            const response = await fetch(`http://localhost:3001/api/threats/${id}/messages`);
-            if (!response.ok) {
-                throw new Error(`Failed to fetch messages: ${response.status}`);
-            }
-            const data = await response.json();
-            setMessages(data);
-        } catch (err) {
-            console.error('Error fetching messages:', err);
+    
+    // Add this new useEffect:
+    useEffect(() => {
+        if (activeTab === 'logs') {
+            fetchLogs();
         }
-    };
+    }, [activeTab, fetchLogs]);
 
     const handleSendMessage = async (e) => {
         e.preventDefault();
@@ -115,6 +144,18 @@ function ThreatDetail() {
     const formatTime = (timestamp) => {
         const date = new Date(timestamp);
         return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    };
+
+    // Add a formatLogDate function for the logs tab
+    const formatLogDate = (timestamp) => {
+        const date = new Date(timestamp);
+        return date.toLocaleString([], { 
+            year: 'numeric', 
+            month: 'short', 
+            day: 'numeric', 
+            hour: '2-digit', 
+            minute: '2-digit' 
+        });
     };
 
     const getThreatLevelLabel = (level) => {
@@ -292,10 +333,32 @@ function ThreatDetail() {
                     </div>
                 )}
 
+                {/* In ThreatDetail.js, update the logs tab rendering */}
                 {activeTab === 'logs' && (
                     <div className="tab-pane">
                         <h3>Activity Logs</h3>
-                        <p>All activity logs will appear here.</p>
+                        {logsLoading ? (
+                        <div className="loading">Loading logs...</div>
+                        ) : logs.length === 0 ? (
+                        <div className="empty-logs">No activity logs yet</div>
+                        ) : (
+                        <div className="log-list">
+                            {logs.map((log) => (
+                            <div key={log.id} className="log-item">
+                                <div className="log-header">
+                                <span className="log-action">{log.action}</span>
+                                <span className="log-user">by {log.user}</span>
+                                <span className="log-time">{formatLogDate(log.created_at)}</span>
+                                </div>
+                                {log.details && (
+                                <div className="log-details">
+                                    {log.details}
+                                </div>
+                                )}
+                            </div>
+                            ))}
+                        </div>
+                        )}
                     </div>
                 )}
             </div>
