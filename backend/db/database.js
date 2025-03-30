@@ -34,7 +34,7 @@ function createTables() {
     });
     db.run("DROP TABLE IF EXISTS threat_messages");
     db.run(`
-      CREATE TABLE IF NOT EXISTS threat_messages (
+      CREATE TABLE threat_messages (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         threat_id INTEGER NOT NULL,
         sender TEXT NOT NULL,

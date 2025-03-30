@@ -359,9 +359,10 @@ app.get('/api/threats/stats', (req, res) => { // queries have to be stacking for
 });
 
 // AI FULL DATA ANALYSIS ENDPOINT!!!
+// AI FULL DATA ANALYSIS ENDPOINT (JSON VERSION)
 app.post('/api/threats/ai-analysis', async (req, res) => {
   try {
-    // query everything from db
+    // Query everything from db
     db.all('SELECT * FROM threats', [], async (err, threats) => {
       if (err) {
         console.error('Database error:', err);
@@ -370,62 +371,79 @@ app.post('/api/threats/ai-analysis', async (req, res) => {
 
       // Prepare the prompt with threat data
       const prompt = `
-        Analyze the following threat data and identify patterns, recurring threats, 
-        and anomalies. Focus on threat names, categories, descriptions, and resolutions if applicable.
-        Provide a concise summary of your findings in each of these sections.
-        Highlight any particularly concerning patterns.
+        Analyze the following threat data and provide a comprehensive security assessment.
+        Return your analysis as a JSON object with these exact properties:
+        - patterns (array of strings): Describe observed patterns
+        - recurringThreats (array of strings): List recurring threats
+        - anomalies (array of strings): Note significant anomalies
+        - summary (string): Overall assessment summary
+        - recommendations (array of strings): Suggested actions
 
-        Your format will be in this exact format:
-        <PATTERNS>|<RECURRING THREATS>|<ANOMALIES>|<SUMMARY>
+        For each threat, consider:
+        - name, description, categories
+        - threat level (1-5)
+        - status and resolution (if resolved)
+        - temporal patterns
 
-        In <PATTERNS>, briefly describe any patterns you might see generally.
-        In <RECURRING THREATS>, specifically describe any common threats/ideas that are recurring.
-        In <ANOMALIES>, find anomalous threats that may have occured. Do not worry about anomalies
-        with low threat-levels, focus more on anomalies with high threat-levels (note 1 is lowest, 5 is highest).
+        Example response format:
+        {
+          "patterns": ["Pattern 1", "Pattern 2"],
+          "recurringThreats": ["Threat type A", "Threat type B"],
+          "anomalies": ["Unusual event X"],
+          "summary": "Overall summary...",
+          "recommendations": ["Action 1", "Action 2"],
+        }
 
-        Note that each "section" is separated by the "|" character with NO spaces in between.
-        Keep it this way, and do not deviate from this pattern EVER.
-        You will only answer the prompt in that format. NO OTHER WAY.
+        If you wish, you can be rather verbose with your repsonse, and try to be specific if possible.
 
-        As an example, you might produce an answer that looks something like this (without quotes):
-        "The amount of threats regarding IT services seems to be steadly increasing over the last 2 months.|There is a number of threats as a result of employees not taking proper security measures, like not wearing their ID around their neck or leaving passwords on sticky notes.|The unknown man jumping the company perimeter was an anomalous event, however we shouldn't disregard this as it could pave the way for future similar events to occur on larger scales.|A summary based on all of the data you look at would go here."
-        You will include NOTHING ELSE in your response, just the answers to each section with those separations.
-        Also, DO NOT include '<' or '>' characters in your response either. Those were just there to illustrate
-        the format for you.
-
-        You can be more verbose and identify, say, multiple patterns for instance, than this in each section if you wish. This was merely to give you a guide of
-        how to format your answer.
-
-        If for some reason you are given no data, simply output "NO DATA|NO DATA|NO DATA|NO DATA" as your answer (NO QUOTES).
-
-        Also, DO NOT preface your results EVER with anything along the lines of "Here is my analysis of the threat data:".
-        Simply answer the questions in the format we gave you.
-
-        All Threat Data:
+        Threat Data:
         ${threats.map(threat => `
           - Name: ${threat.name}
           - Categories: ${JSON.parse(threat.categories).join(', ')}
           - Description: ${threat.description}
-          - Level: ${threat.level}
           - Status: ${threat.status}
+          ${threat.resolution ? `- Resolution: ${threat.resolution}` : ''}
           - Reported: ${threat.created_at}
         `).join('\n')}
+
+        Return ONLY valid JSON. Do not include any explanatory text outside the JSON structure.
       `;
 
-      // Send to Groq
+      // send to Groq
       const chatCompletion = await groq.chat.completions.create({
         messages: [{ role: "user", content: prompt }],
         model: "llama3-70b-8192",
+        response_format: { type: "json_object" },
         temperature: 0.7,
         max_tokens: 1000
       });
 
-      const analysis = chatCompletion.choices[0]?.message?.content;
-      res.json({ analysis });
+      // Parse and validate the response
+      try {
+        const responseContent = chatCompletion.choices[0]?.message?.content;
+        const analysis = JSON.parse(responseContent);
+        
+        // Basic validation
+        if (!analysis.patterns || !analysis.summary) {
+          throw new Error('Invalid analysis format received from AI');
+        }
+
+        res.json({ 
+          success: true,
+          analysis 
+        });
+
+      } catch (parseError) {
+        console.error('Failed to parse AI response:', parseError);
+        throw new Error('AI returned invalid JSON format');
+      }
     });
   } catch (error) {
     console.error('AI analysis error:', error);
-    res.status(500).json({ error: 'AI analysis failed' });
+    res.status(500).json({ 
+      error: 'AI analysis failed',
+      details: error.message
+    });
   }
 });
 
